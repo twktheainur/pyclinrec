@@ -1,13 +1,13 @@
-from typing import Set
+from typing import Set, Tuple, List
 
 import regex
-from metaphone import doublemetaphone
 from nltk import TreebankWordTokenizer, StemmerI, SnowballStemmer
 from nltk.tokenize import word_tokenize
 from tqdm import tqdm
+from metaphone import doublemetaphone
 
-from claimskg.reconciler.dictionary import DictionaryLoader
-from claimskg.reconciler.recognizer import ConceptRecognizer, Annotation, Concept
+from dictionary import DictionaryLoader
+from recognizer import ConceptRecognizer, Concept, Annotation
 
 
 class InterDoubleMetaphoneConceptRecognizer(ConceptRecognizer):
@@ -61,7 +61,7 @@ class InterDoubleMetaphoneConceptRecognizer(ConceptRecognizer):
             self.concept_length_index[key] = concept_token_count
             label_index += 1
 
-    def recognize(self, text) -> Set[Annotation]:
+    def recognize(self, text) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
 
         annotations = []
 
@@ -142,13 +142,15 @@ class InterDoubleMetaphoneConceptRecognizer(ConceptRecognizer):
                     concept_id = key_parts[0]
                     annotation = Annotation(concept_id, concept_start, concept_end, text[concept_start:concept_end],
                                             match_cursor - stop_count, label_key=concept,
-                                            concept=self.concept_index[concept])
+                                            concept=self.concept_index[concept_id])
                     annotations.append(annotation)
 
             current_token_span_index += 1
         # Here we filter the annotations to keep only those where the concept length matches the length of the
         # identified annotation
-        return set([annotation for annotation in annotations if
+        return token_spans, \
+               [normalized_input_text[span[0]:span[1]] for span in token_spans], \
+               set([annotation for annotation in annotations if
                     annotation.matched_length == self.concept_length_index[annotation.label_key]])
 
     def concepts_from_phone(self, phone):
@@ -213,7 +215,7 @@ class IntersStemConceptRecognizer(ConceptRecognizer):
             self.concept_length_index[key] = concept_token_count
             label_index += 1
 
-    def recognize(self, text) -> Set[Annotation]:
+    def recognize(self, text) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
 
         annotations = []
 
@@ -301,7 +303,9 @@ class IntersStemConceptRecognizer(ConceptRecognizer):
             current_token_span_index += 1
         # Here we filter the annotations to keep only those where the concept length matches the length of the
         # identified annotation
-        return set([annotation for annotation in annotations if
+        return token_spans, \
+               [normalized_input_text[span[0]:span[1]] for span in token_spans], \
+               set([annotation for annotation in annotations if
                     annotation.matched_length == self.concept_length_index[annotation.label_key]])
 
     def concepts_from_stem(self, stem):

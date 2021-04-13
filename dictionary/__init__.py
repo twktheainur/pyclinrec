@@ -94,3 +94,25 @@ class SemaxoneDictionaryLoader(DictionaryLoader):
 
     def save(self, output_file: str):
         pass
+
+
+class StringDictionaryLoader(MgrepDictionaryLoader):
+
+    def __init__(self, string_entries):
+        super().__init__(None)
+        self.dictionary_string_entries = string_entries
+
+    def load(self):
+        for string_entry in self.dictionary_string_entries:
+            id = string_entry[0]
+            if id in self.dictionary_index.keys():
+                entry = self.dictionary_index[id]  # type : DictionaryEntry
+                synonyms = entry.synonyms
+                if not synonyms:
+                    entry.synonyms = []
+                entry.synonyms.append(string_entry[1])
+            else:
+                entry = DictionaryEntry(id, string_entry[1])
+                self.dictionary.append(entry)
+                self.dictionary_index[id] = entry
+                self.reverse_index[string_entry[1]] = id
