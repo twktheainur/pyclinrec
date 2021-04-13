@@ -7,7 +7,7 @@ from tqdm import tqdm
 from metaphone import doublemetaphone
 
 from dictionary import DictionaryLoader
-from recognizer import ConceptRecognizer, Concept, Annotation
+from pyclinrec.recognizer import ConceptRecognizer, Concept, Annotation
 
 
 class InterDoubleMetaphoneConceptRecognizer(ConceptRecognizer):
@@ -140,26 +140,25 @@ class InterDoubleMetaphoneConceptRecognizer(ConceptRecognizer):
                 for concept in concepts:
                     key_parts = concept.split(":::")
                     concept_id = key_parts[0]
+
                     annotation = Annotation(concept_id, concept_start, concept_end, text[concept_start:concept_end],
                                             match_cursor - stop_count, label_key=concept,
                                             concept=self.concept_index[concept_id])
-                    concept = self.concept_index[concept]
                     annotations.append(annotation)
 
-                    current_token_span_index += 1
-                    # Here we filter the annotations to keep only those where the concept length matches the length of the
-                    # identified annotation
+            current_token_span_index += 1
+            # Here we filter the annotations to keep only those where the concept length matches the length of the
+            # identified annotation
 
         return token_spans, [normalized_input_text[span[0]:span[1]] for span in token_spans], \
                set([annotation for annotation in annotations if
                     annotation.matched_length == self.concept_length_index[annotation.label_key]])
 
-
-def concepts_from_phone(self, phone):
-    if phone not in self.unigram_phone_index:
-        return set()
-    else:
-        return self.unigram_phone_index[phone]
+    def concepts_from_phone(self, phone):
+        if phone not in self.unigram_phone_index:
+            return set()
+        else:
+            return self.unigram_phone_index[phone]
 
 
 class IntersStemConceptRecognizer(ConceptRecognizer):

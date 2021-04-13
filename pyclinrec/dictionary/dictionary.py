@@ -79,23 +79,6 @@ class MgrepDictionaryLoader(DictionaryLoader):
             output.flush()
 
 
-class SemaxoneDictionaryLoader(DictionaryLoader):
-
-    def load(self):
-        data = pandas.read_csv(self.dictionary_file, delimiter="\t", encoding="utf8")
-        for index, row in data.iterrows():
-            id = int(row["Id"])
-            entry = DictionaryEntry(id=id, label=row["Lemme"], definition=row["Definition"],
-                                    source=row["Origine"],
-                                    language=row["Langue"])
-            self.dictionary.append(entry)
-            self.dictionary_index[id] = entry
-            self.reverse_index[row["Lemme"]] = id
-
-    def save(self, output_file: str):
-        pass
-
-
 class StringDictionaryLoader(MgrepDictionaryLoader):
 
     def __init__(self, string_entries):

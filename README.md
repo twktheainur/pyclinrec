@@ -50,7 +50,7 @@ corpus = list() # type: List[str]
 #Load some corpus as a list of strings
 
 recognizer = IntersStemConceptRecognizer(dictionary_loader=loader,
-                                         stop_words_file="data/stopwordsfr.txt",                                 termination_terms_file="data/termination_termsfr.txt")
+                                         stop_words_file="pyclinrec/stopwordsfr.txt",                                 termination_terms_file="pyclinrec/termination_termsfr.txt")
 recognizer.initialize()
 
 for text in corpus: 

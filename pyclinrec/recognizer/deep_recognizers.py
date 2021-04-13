@@ -7,7 +7,7 @@ from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModel, AutoConfig
 
 from dictionary import DictionaryLoader
-from recognizer import ConceptRecognizer, Annotation
+from pyclinrec.recognizer import ConceptRecognizer, Concept, Annotation
 
 
 class IntersEmbeddingConceptRecognizer(ConceptRecognizer):
