@@ -143,6 +143,7 @@ class InterDoubleMetaphoneConceptRecognizer(ConceptRecognizer):
                     annotation = Annotation(concept_id, concept_start, concept_end, text[concept_start:concept_end],
                                             match_cursor - stop_count, label_key=concept,
                                             concept=self.concept_index[concept_id])
+                                            concept=self.concept_index[concept])
                     annotations.append(annotation)
 
             current_token_span_index += 1
