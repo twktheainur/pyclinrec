@@ -6,8 +6,8 @@ import torch
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModel, AutoConfig
 
-from claimskg.reconciler.dictionary import DictionaryLoader
-from claimskg.reconciler.recognizer import ConceptRecognizer, Concept, Annotation
+from dictionary import DictionaryLoader
+from recognizer import ConceptRecognizer, Annotation
 
 
 class IntersEmbeddingConceptRecognizer(ConceptRecognizer):
