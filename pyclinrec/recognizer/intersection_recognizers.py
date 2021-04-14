@@ -6,7 +6,7 @@ from nltk.tokenize import word_tokenize
 from tqdm import tqdm
 from metaphone import doublemetaphone
 
-from dictionary import DictionaryLoader
+from pyclinrec.dictionary import DictionaryLoader
 from pyclinrec.recognizer import ConceptRecognizer, Concept, Annotation
 
 

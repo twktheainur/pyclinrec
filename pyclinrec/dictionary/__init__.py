@@ -1,1 +1,1 @@
-from .dictionary import MgrepDictionaryLoader, StringDictionaryLoader
+from .dictionary import MgrepDictionaryLoader, StringDictionaryLoader, DictionaryLoader

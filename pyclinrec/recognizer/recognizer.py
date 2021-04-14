@@ -3,7 +3,7 @@ from typing import List, Set, Dict
 
 import torch
 
-from dictionary import DictionaryLoader
+from pyclinrec.dictionary import DictionaryLoader
 
 
 class Concept:
