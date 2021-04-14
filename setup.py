@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='pyclinrec',
       version='0.0.1',
@@ -7,7 +7,7 @@ setup(name='pyclinrec',
       author='Andon Tchechmedjiev',
       author_email='andon.tchechmedjiev@mines-ales.fr',
       license='MIT',
-      packages=['pyclinrec'],
+      packages=find_packages(include=['pyclinrec', 'pyclinrec.recognizer', 'pyclinrec.dictionary']),
       keywords='clinical nlp concept recognizer entity linking',
       classifiers=[
           'Development Status :: 3 - Alpha',

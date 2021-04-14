@@ -3,8 +3,6 @@ from typing import List, Set, Dict
 
 import torch
 
-from pyclinrec.dictionary import DictionaryLoader
-
 
 class Concept:
     def __init__(self, uri, labels: Set[str] = None, label_embeddings: Dict[str, torch.tensor] = None,
@@ -57,7 +55,7 @@ class Annotation:
 
 
 class ConceptRecognizer(ABC):
-    def __init__(self, stop_words_file, termination_terms_file, dictionary_loader: DictionaryLoader):
+    def __init__(self, stop_words_file, termination_terms_file, dictionary_loader):
         self.stop_words = self._load_word_list(stop_words_file)
         self.termination_terms = self._load_word_list(termination_terms_file)
         self.dictionary_loader = dictionary_loader
