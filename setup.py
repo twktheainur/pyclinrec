@@ -16,13 +16,13 @@ setup(name='pyclinrec',
           'Topic :: Text Processing :: Linguistic',
       ],
       install_requires=[
-          'regex==2020.10.15'
-          'torch'
-          'transformers'
-          'pandas==1.1.3'
-          'tqdm'
-          'nltk'
-          'requests'
+          'regex==2020.10.15',
+          'torch',
+          'transformers',
+          'pandas==1.1.3',
+          'tqdm',
+          'nltk',
+          'requests',
           'Metafone'
       ],
       test_suite='nose.collector',
