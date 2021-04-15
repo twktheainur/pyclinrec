@@ -55,11 +55,12 @@ class Annotation:
 
 
 class ConceptRecognizer(ABC):
-    def __init__(self, stop_words_file, termination_terms_file, dictionary_loader):
+    def __init__(self, stop_words_file, termination_terms_file, dictionary_loader, language="en"):
         self.stop_words = self._load_word_list(stop_words_file)
         self.termination_terms = self._load_word_list(termination_terms_file)
         self.dictionary_loader = dictionary_loader
         self.concept_index = dict()  # type: Dict[str,Concept]
+        self.language = language
 
     @staticmethod
     def _load_word_list(file) -> List[str]:
