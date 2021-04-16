@@ -9,6 +9,8 @@ from pyclinrec.recognizer import InterDoubleMetaphoneConceptRecognizer, IntersSt
 class TestRecognizers(TestCase):
 
     def setUp(self):
+        import nltk
+        nltk.download('stopwords')
         self.dictionary_loader = StringDictionaryLoader([("1", "bright cat"), ("2", "Brighton"), ("3", "mechanical")])
 
     def generic_english_tests(self, recognizer):
