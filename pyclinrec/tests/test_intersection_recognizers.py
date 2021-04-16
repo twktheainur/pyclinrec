@@ -9,11 +9,10 @@ from pyclinrec.recognizer import InterDoubleMetaphoneConceptRecognizer, IntersSt
 class TestRecognizers(TestCase):
 
     def setUp(self):
-        import nltk
-        nltk.download('stopwords')
+
         self.dictionary_loader = StringDictionaryLoader([("1", "bright cat"), ("2", "Brighton"), ("3", "mechanical")])
 
-    def generic_english_tests(self, recognizer):
+    def _generic_english(self, recognizer):
         # Base annotation
         spans, tokens, annotations = recognizer.recognize("The bright cat is from Brighton.")
 
@@ -31,14 +30,14 @@ class TestRecognizers(TestCase):
         recognizer = InterDoubleMetaphoneConceptRecognizer(self.dictionary_loader, "pyclinrec/stopwordsen.txt",
                                                            "pyclinrec/termination_termsen.txt")
         recognizer.initialize()
-        self.generic_english_tests(recognizer)
+        self._generic_english(recognizer)
 
     def test_stem_recognize(self):
         recognizer = IntersStemConceptRecognizer(self.dictionary_loader, "pyclinrec/stopwordsen.txt",
                                                  "pyclinrec/termination_termsen.txt")
         recognizer.initialize()
 
-        self.generic_english_tests(recognizer)
+        self._generic_english(recognizer)
 
 
 if __name__ == '__main__':
