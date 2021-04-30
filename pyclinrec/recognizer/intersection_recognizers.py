@@ -17,7 +17,7 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
         super().__init__(stop_words_file, termination_terms_file, dictionary_loader, language=language)
         self.unigram_root_index = dict()  # record the phone and give an Id
         self.concept_length_index = dict()  # record the phone and give the length of the expression
-        self.punctuation_remove = regex.compile('\p{C}', regex.UNICODE)
+        self.punctuation_remove = regex.compile(r'\p{C}', regex.UNICODE)
 
     @abstractmethod
     def _root_function(self, token) -> str:
@@ -160,9 +160,11 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
             # Here we filter the annotations to keep only those where the concept length matches the length of the
             # identified annotation
 
-        return token_spans, [normalized_input_text[span[0]:span[1]] for span in token_spans], \
-               set([annotation for annotation in annotations if
-                    annotation.matched_length == self.concept_length_index[annotation.label_key]])
+        return token_spans, [normalized_input_text[span[0]:span[1]] for span in token_spans], set(
+            [annotation for annotation in annotations if
+             annotation.matched_length == self.concept_length_index[annotation.label_key]
+             ]
+        )
 
 
 class InterDoubleMetaphoneConceptRecognizer(IntersectionConceptRecognizer):
@@ -190,7 +192,7 @@ class IntersStemConceptRecognizer(IntersectionConceptRecognizer):
         else:
             self.stemmer = stemmer
 
-        self.punctuation_remove = regex.compile('\p{C}', regex.UNICODE)
+        self.punctuation_remove = regex.compile(r'\p{C}', regex.UNICODE)
 
     def _root_function(self, token) -> str:
         return self.stemmer.stem(self.stemmer.stem(token))
