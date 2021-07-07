@@ -8,7 +8,7 @@ from tqdm import tqdm
 from metaphone import doublemetaphone
 
 from pyclinrec.dictionary import DictionaryLoader
-from pyclinrec.recognizer import ConceptRecognizer, Concept, Annotation
+from pyclinrec.recognizer import ConceptRecognizer, Concept, Annotation, AnnotationFilter
 from pyclinrec.spacy_utils import span_tokenize
 
 import numpy
