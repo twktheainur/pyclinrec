@@ -10,7 +10,6 @@ from metaphone import doublemetaphone
 from pyclinrec.dictionary import DictionaryLoader
 from pyclinrec.recognizer import ConceptRecognizer, Concept, Annotation
 from pyclinrec.spacy_utils import span_tokenize
-from pyclinrec.recognizer import AnnotationFilter
 
 import numpy
 import jellyfish
