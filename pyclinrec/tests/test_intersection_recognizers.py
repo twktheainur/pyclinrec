@@ -82,11 +82,11 @@ class TestRecognizers(TestCase):
 
         self._generic_english_single_stem_artifacts(recognizer)
 
-    def test_approxtrie_recognize_english_1(self):
-        recognizer = TrieApproxRecognizer(self.dictionary_loader)
-        recognizer.initialize()
-
-        self._generic_english_1(recognizer)
+    # def test_approxtrie_recognize_english_1(self):
+    #     recognizer = TrieApproxRecognizer(self.dictionary_loader)
+    #     recognizer.initialize()
+    #
+    #     self._generic_english_1(recognizer)
 
 
 if __name__ == '__main__':

@@ -125,11 +125,11 @@ class IntersEmbeddingConceptRecognizer(ConceptRecognizer):
     def annotate(self, input_text) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
         annotations = []
 
-        tokens = self.tokenizer.tokenize(text)
+        tokens = self.tokenizer.tokenize(input_text)
         token_ids = self.tokenizer.convert_tokens_to_ids(tokens)
 
-        len_leading_whitespaces = len(text) - len(text.lstrip())
-        token_spans = self._tokens_to_spans(tokens, text, initial_start_offset=len_leading_whitespaces)
+        len_leading_whitespaces = len(input_text) - len(input_text.lstrip())
+        token_spans = self._tokens_to_spans(tokens, input_text, initial_start_offset=len_leading_whitespaces)
 
         print(tokens)
         print(token_ids)
@@ -142,7 +142,7 @@ class IntersEmbeddingConceptRecognizer(ConceptRecognizer):
             current_span = token_spans[current_token_span_index]
 
             # we extract the string of the token from the text
-            token = text[current_span[0]:current_span[1]]
+            token = input_text[current_span[0]:current_span[1]]
 
             # if the word is a stoplist term or a termination term we skip it
             if token not in self.stop_words and token not in self.termination_terms:
@@ -162,7 +162,7 @@ class IntersEmbeddingConceptRecognizer(ConceptRecognizer):
 
                     # We get the next token and position span
                     next_span = token_spans[current_token_span_index + match_cursor]
-                    next_token = text[next_span[0]:next_span[1]]
+                    next_token = input_text[next_span[0]:next_span[1]]
 
                     # if the token is in the termination list the matching process ends here
                     if next_token in self.termination_terms:
@@ -203,7 +203,7 @@ class IntersEmbeddingConceptRecognizer(ConceptRecognizer):
                 for concept in concepts:
                     key_parts = concept.split(":::")
                     concept_id = key_parts[0]
-                    annotation = Annotation(concept_id, concept_start, concept_end, text[concept_start:concept_end],
+                    annotation = Annotation(concept_id, concept_start, concept_end, input_text[concept_start:concept_end],
                                             match_cursor - stop_count, label_key=concept,
                                             concept=self.concept_index[concept_id])
                     annotations.append(annotation)
