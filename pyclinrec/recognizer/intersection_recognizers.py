@@ -9,15 +9,46 @@ from metaphone import doublemetaphone
 
 from pyclinrec.dictionary import DictionaryLoader
 from pyclinrec.recognizer import ConceptRecognizer, Concept, Annotation
+from pyclinrec.spacy_utils import span_tokenize
+from recognizer import AnnotationFilter
+
+import numpy
+import jellyfish
 
 
 class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
+
     def __init__(self, dictionary_loader: DictionaryLoader, stop_words_file: str, termination_terms_file: str,
-                 language="en"):
-        super().__init__(stop_words_file, termination_terms_file, dictionary_loader, language=language)
+                 language="en", filters: List[AnnotationFilter] = None):
+        """
+        Parameters
+        ----------
+            dictionary_loader: DictionaryLoader
+                The dictionary loader that will provide the dictionary contents
+            stop_words_file: str
+                Path to a text file containing a list of stop words (one per line)
+            termination_terms_file: str
+                Path to a text file containing a list of termination terms that stop the production of additional
+                tokens in a matching mention.
+            language: str
+                The language of the text that will processed (affects the choice of tokenner and stemmer).
+            filters: List[AnnotationFilter]
+                A list of filters to apply post recognition
+        """
+        super().__init__(dictionary_loader, language=language, filters=filters)
+        self.stop_words = self._load_word_list(stop_words_file)
+        self.termination_terms = self._load_word_list(termination_terms_file)
         self.unigram_root_index = dict()  # record the phone and give an Id
         self.concept_length_index = dict()  # record the phone and give the length of the expression
-        self.punctuation_remove = regex.compile(r'\p{C}', regex.UNICODE)
+
+        if language == 'en':
+            import en_core_web_md
+            self.spacy = en_core_web_md.load()
+        elif language == 'fr':
+            import fr_core_web_md
+            self.spacy = fr_core_web_md.load()
+        else:
+            raise ValueError(f"Unsupported language: {language}")
 
     @abstractmethod
     def _root_function(self, token) -> str:
@@ -30,11 +61,14 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
             return self.unigram_root_index[root]
 
     def _load_concept_labels(self, concept_id, labels):
+        punctuation_remove = regex.compile(r'[\p{C}|\p{M}|\p{P}|\p{S}|\p{Z}]+', regex.UNICODE)
         label_index = 0
         for label in labels:
-            normalized = self.punctuation_remove.sub(" ", label).replace("-", " ")
+
+            normalized = punctuation_remove.sub(" ", label).replace("-", " ").lower()
             # We tokenize the label
-            tokens = word_tokenize(normalized)
+            tokens, _ = span_tokenize(self.spacy, normalized)
+
             concept_token_count = 0
             # For each token
             key = str(concept_id) + ":::" + str(label_index)
@@ -46,42 +80,22 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
                     # we create the dictionary entry if it did not exist before
                     if token_phone not in self.unigram_root_index:
                         self.unigram_root_index[
-                            token_phone] = set()  # il va eut etre falloir creer une liste a la place
+                            token_phone] = set()
                     # if it already existed we add the concept id to the corresponding set
                     self.unigram_root_index[token_phone].add(key)
                     concept_token_count += 1
             self.concept_length_index[key] = concept_token_count
             label_index += 1
 
-    def initialize(self):
-        print("Now loading the dictionary...")
-        self.dictionary_loader.load()
-        dictionary = self.dictionary_loader.dictionary  # type : List[DictionaryEntry]
-        print("Now indexing the dictionary...")
-        for entry in tqdm(dictionary):
-            # we split concept ids from labels
-            # fields = line.split("\t")
-            label = entry.label
-            concept_id = entry.id
-
-            labels = [label]
-            if entry.synonyms:
-                labels.extend(entry.synonyms)
-
-            self.concept_index[concept_id] = Concept(concept_id, set(labels))
-            self._load_concept_labels(concept_id, labels)
-
-    def recognize(self, text) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
-
+    def match_mentions(self, input_text) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
+        punctuation_remove = regex.compile(r'[\p{C}|\p{M}|\p{P}|\p{S}]+', regex.UNICODE)
         annotations = []
 
         # We normalize the text (Remove all punctuation and replace with whitespace)
-
-        normalized_input_text = self.punctuation_remove.sub(" ", text).replace("-", " ").lower()
+        normalized_input_text = punctuation_remove.sub(" ", input_text).replace("-", " ").lower()
 
         # We split the text into token spans (begin and end position from the start of the text)
-        spans = TreebankWordTokenizer().span_tokenize(normalized_input_text)
-        token_spans = [i for i in spans]
+        tokens, token_spans = span_tokenize(self.spacy, normalized_input_text)
 
         # we iterate over tokens one by one until we reach the end of the text
         current_token_span_index = 0
@@ -151,7 +165,8 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
                     key_parts = concept.split(":::")
                     concept_id = key_parts[0]
 
-                    annotation = Annotation(concept_id, concept_start, concept_end, text[concept_start:concept_end],
+                    annotation = Annotation(concept_id, concept_start, concept_end,
+                                            input_text[concept_start:concept_end],
                                             match_cursor - stop_count, label_key=concept,
                                             concept=self.concept_index[concept_id])
                     annotations.append(annotation)
@@ -167,14 +182,41 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
         )
 
 
-class InterDoubleMetaphoneConceptRecognizer(IntersectionConceptRecognizer):
+class LevenshteinAnnotationFilter(AnnotationFilter):
 
-    def __init__(self, dictionary_loader: DictionaryLoader, stop_words_file: str, termination_terms_file: str,
-                 language="en"):
-        super().__init__(dictionary_loader, stop_words_file, termination_terms_file, language)
+    def __init__(self, theta=0.85):
+        super().__init__()
+        self.theta = theta
 
-    def _root_function(self, token) -> str:
-        return doublemetaphone(token)[0]
+    def apply_filter(self, annotations: Set[Annotation], text, tokens_spans, tokens) -> Set[Annotation]:
+        final_annotations = []
+        for annotation in annotations:
+            if annotation.matched_length > 1:
+                final_annotations.append(annotation)
+            elif annotation.matched_length == 1:
+                if len(annotation.matched_text) <= 3:
+                    if annotation.matched_length == annotation.concept:
+                        final_annotations.append(annotation)
+                elif self._max_levenshtein_less_than_theta(annotation.matched_text, annotation.concept):
+                    final_annotations.append(annotation)
+            return annotations
+
+    def _max_levenshtein_less_than_theta(self, mention: str, concept: Concept):
+        distances = []
+        for label in concept.labels:
+            distances.append(1 - jellyfish.damerau_levenshtein_distance(mention, label))
+        return numpy.array(distances).max(0) > self.theta
+
+
+# class InterDoubleMetaphoneConceptRecognizer(IntersectionConceptRecognizer):
+#
+#     def __init__(self, dictionary_loader: DictionaryLoader, stop_words_file: str, termination_terms_file: str,
+#                  language="en"):
+#         super().__init__(dictionary_loader, stop_words_file, termination_terms_file, language,
+#                          [LevenshteinAnnotationFilter()])
+#
+#     def _root_function(self, token) -> str:
+#         return doublemetaphone(token)[0]
 
 
 class IntersStemConceptRecognizer(IntersectionConceptRecognizer):
@@ -182,7 +224,25 @@ class IntersStemConceptRecognizer(IntersectionConceptRecognizer):
     def __init__(self, dictionary_loader: DictionaryLoader, stop_words_file: str, termination_terms_file: str,
                  language="en",
                  stemmer: StemmerI = None):
-        super().__init__(dictionary_loader, stop_words_file, termination_terms_file, language)
+        """
+        Constructs an InterStemConceptRecognizer instance.
+            Parameters
+             ----------
+                 dictionary_loader: DictionaryLoader
+                     The dictionary loader that will provide the dictionary contents
+                 stop_words_file: str
+                     Path to a text file containing a list of stop words (one per line)
+                 termination_terms_file: str
+                     Path to a text file containing a list of termination terms that stop the production of additional
+                     tokens in a matching mention.
+                 language: str
+                     The language of the text that will processed (affects the choice of tokenner and stemmer).
+                     Default: en, Supported en,fr
+                 stemmer: StemmerI
+                     The stemmer to use, especially if lang is different from 'en' or 'fr'
+        """
+        super().__init__(dictionary_loader, stop_words_file, termination_terms_file, language,
+                         filters=[LevenshteinAnnotationFilter(theta=0.85)])
 
         if not stemmer:
             if self.language == "en":

@@ -6,7 +6,7 @@ import torch
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModel, AutoConfig
 
-from dictionary import DictionaryLoader
+from pyclinrec.dictionary import DictionaryLoader
 from pyclinrec.recognizer import ConceptRecognizer, Concept, Annotation
 
 
@@ -122,7 +122,7 @@ class IntersEmbeddingConceptRecognizer(ConceptRecognizer):
                 start_offset = end_offset
         return spans
 
-    def recognize(self, text) -> Set[Annotation]:
+    def annotate(self, input_text) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
         annotations = []
 
         tokens = self.tokenizer.tokenize(text)

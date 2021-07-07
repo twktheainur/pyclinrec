@@ -4,7 +4,7 @@ from abc import abstractmethod, ABC
 import requests
 from tqdm import tqdm
 
-from dictionary import DictionaryLoader
+from pyclinrec.dictionary import DictionaryLoader
 
 
 class DictionaryEnrichment(ABC):

@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import List, Set, Dict
+from typing import List, Set, Dict, Tuple
 
 import torch
+from tqdm import tqdm
 
 
 class Concept:
@@ -54,13 +55,60 @@ class Annotation:
         return hash((self.matched_text, self.start, self.end, self.concept_id))
 
 
+class ConceptIndexer(ABC):
+    def __init__(self):
+        pass
+
+
+class AnnotationFilter(ABC):
+    def __init__(self):
+        super().__init__()
+
+    @abstractmethod
+    def apply_filter(self, annotations: Set[Annotation], text, tokens_spans: List[Tuple[int, int]], tokens) -> Set[
+        Annotation]:
+        """
+        Filter the annotations provided and return a list of filtered annotations of length lesser or equal to the
+        annotations provided.
+        Parameters
+        ----------
+            annotations: List[Annotation]
+                The list of annotations to filter
+            text: str
+                The original text that corresponds to the annotations
+            tokens_spans: Tuple[int,int]
+                The spans of each token of the tokenized text
+            tokens: List[str]
+                Tokens corresponding to the spans in the text
+
+        Return
+        ------
+            filtered_annotations: List[Annotation]
+                The list of filtered annotations
+        """
+        pass
+
+
 class ConceptRecognizer(ABC):
-    def __init__(self, stop_words_file, termination_terms_file, dictionary_loader, language="en"):
-        self.stop_words = self._load_word_list(stop_words_file)
-        self.termination_terms = self._load_word_list(termination_terms_file)
+    def __init__(self, dictionary_loader, language="en",
+                 filters: List[AnnotationFilter] = None):
+        """
+        This is the constructor of an Abstract class and should never be called directly, see subclasses.
+             Parameters
+             ----------
+                 dictionary_loader: DictionaryLoader
+                     The dictionary loader that will provide the dictionary contents
+                 language: str
+                     The language of the text that will processed (affects the choice of tokenizer and stemmer).
+                 filters: List[AnnotationFilter]
+                     A list of filters to apply post recognition
+             """
         self.dictionary_loader = dictionary_loader
         self.concept_index = dict()  # type: Dict[str,Concept]
         self.language = language
+        if filters is None:
+            filters = []
+        self.filters = filters
 
     @staticmethod
     def _load_word_list(file) -> List[str]:
@@ -69,9 +117,63 @@ class ConceptRecognizer(ABC):
         return words
 
     @abstractmethod
-    def initialize(self):
+    def _load_concept_labels(self, concept_id, labels):
         pass
 
+    def initialize(self):
+        print("Now loading the dictionary...")
+        self.dictionary_loader.load()
+        dictionary = self.dictionary_loader.dictionary  # type : List[DictionaryEntry]
+        print("Now indexing the dictionary...")
+        for entry in tqdm(dictionary):
+            # we split concept ids from labels
+            # fields = line.split("\t")
+            label = entry.label
+            concept_id = entry.id
+
+            labels = [label]
+            if entry.synonyms:
+                labels.extend(entry.synonyms)
+            concept = Concept(concept_id, set(labels))
+            self.concept_index[concept_id] = concept
+            self._load_concept_labels(concept_id, labels)
+
     @abstractmethod
-    def recognize(self, input_text) -> Set[Annotation]:
-        pass
+    def match_mentions(self, input_text) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
+        """Match candidate mentions of entities from the dictionary in the text
+        Parameters
+        ----------
+            input_text: str
+                The input text on which mentions should be matched
+        Returns
+        -------
+            token_spans: List[Tuple[int, int]]
+                The token spans for the input_text used as the basis for mention annotation.
+            tokens: List[str]
+                The corresponding tokens
+            annotations: Set[Annotation]
+                Mention annotations, see @Annotation
+        """
+
+        raise NotImplementedError("This abstract method must be overridden")
+
+    def annotate(self, input_text) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
+        """Matches candidate mentions of entities from the dictionary in the text and
+        applies pre and post-processing filters
+        Parameters
+        ----------
+            input_text: str
+                The input text on which mentions should be matched
+        Returns
+        -------
+            token_spans: List[Tuple[int, int]]
+                The token spans for the input_text used as the basis for mention annotation.
+            tokens: List[str]
+                The corresponding tokens
+            annotations: Set[Annotation]
+                Mention annotations, see @Annotation
+        """
+        token_spans, tokens, annotations = self.match_mentions(input_text)
+        for annotation_filter in self.filters:
+            annotations = annotation_filter.apply_filter(annotations, input_text, token_spans, tokens)
+        return token_spans, tokens, annotations
