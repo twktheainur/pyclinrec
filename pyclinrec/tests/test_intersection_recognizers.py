@@ -82,6 +82,19 @@ class TestRecognizers(TestCase):
 
         self._generic_english_single_stem_artifacts(recognizer)
 
+    def test_agrovoc_sentence_end_bug(self):
+        dictionary_loader = StringDictionaryLoader(
+            [("1", "spectroscopy"), ("2", "technique"), ("3", "according")])
+        recognizer = IntersStemConceptRecognizer(dictionary_loader, "pyclinrec/stopwordsen.txt",
+                                                 "pyclinrec/termination_termsen.txt")
+        recognizer.initialize()
+        text = "infrared spectroscopy technique (NIRS). According to"
+        spans, tokens, annotations = recognizer.annotate(text)
+        annotations = list(annotations)
+        annotations.sort(key=lambda a: a.start)
+        assert (spans[-2][0] == annotations[-1].start and spans[-2][1] == annotations[-1].end and annotations[
+            -1].matched_text == "According")
+
     # def test_approxtrie_recognize_english_1(self):
     #     recognizer = TrieApproxRecognizer(self.dictionary_loader)
     #     recognizer.initialize()

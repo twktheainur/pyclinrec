@@ -91,7 +91,9 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
         annotations = []
 
         # We normalize the text (Remove all punctuation and replace with whitespace)
-        normalized_input_text = punctuation_remove.sub(" ", input_text).replace("-", " ").lower()
+        # normalized_input_text = punctuation_remove.sub(" ", input_text).replace("-", " ").lower()
+        # normalized_input_text = input_text.replace("-", " ").lower()
+        normalized_input_text = input_text
 
         # We split the text into token spans (begin and end position from the start of the text)
         tokens, token_spans = span_tokenize(self.spacy, normalized_input_text)
