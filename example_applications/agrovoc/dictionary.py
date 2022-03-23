@@ -93,7 +93,7 @@ def generate_dictionary_from_skos_file(self, graph: Graph = None, thesaurus_path
     dictionary_loader.save(save_file)
 
 
-def generate_dictionary_from_skos_sparql(self, endpoint=None,
+def generate_dictionary_from_skos_sparql(endpoint,
                                          save_file="agrovoc_dictionary.tsv",
                                          skos_xl_labels=True,
                                          lang="fr"):
@@ -132,3 +132,4 @@ def generate_dictionary_from_skos_sparql(self, endpoint=None,
 
     dictionary_loader = StringDictionaryLoader(string_entries)
     dictionary_loader.load()
+    dictionary_loader.save(save_file)
