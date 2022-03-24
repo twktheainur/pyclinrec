@@ -2,8 +2,10 @@
 
 ## 1. Install requirements
 
+Install the dependencies and then pyclinrec
 ```shell
 pip install -r requirements.txt
+pip install https://github.com/twktheainur/pyclinrec.git
 ```
 
 ## 2. Generate dictionary
