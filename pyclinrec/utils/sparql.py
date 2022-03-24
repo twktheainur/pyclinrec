@@ -6,24 +6,33 @@ from SPARQLWrapper import JSON
 
 class SparQLOffsetFetcher:
 
-    def __init__(self, sparql_wrapper, page_size, where_body, select_columns, prefixes="", timeout=0, redis=None):
+    def __init__(self, sparql_wrapper, page_size, where_body, select_columns, from_statement="", prefixes="", timeout=0,
+                 redis=None):
         self.sparql_wrapper = sparql_wrapper
         self.sparql_wrapper.setTimeout(timeout)
         self.page_size = page_size
         self.current_offset = 0
         self.where_body = where_body
+        self.from_statement = from_statement
         self.prefixes = prefixes
         self.select_columns = select_columns
         sparql_wrapper.setReturnFormat(JSON)
         self.count = -1
         self.__get_count__()
+        self.redis = redis
 
     def __get_count__(self):
         if self.count == -1:
-            query = """define sql:big-data-const 0 {prefixes} SELECT count(distinct *) as ?count WHERE {{
-                {where_body}
-            }}
-            """.format(where_body=self.where_body, prefixes=self.prefixes)
+            if len(self.from_statement) == 0:
+                query = f"""define sql:big-data-const 0 {self.prefixes} SELECT count(distinct *) as ?count WHERE {{
+                    {self.where_body}
+                }}
+                """
+            else:
+                query = f"""define sql:big-data-const 0 {self.prefixes} SELECT count(distinct *) as ?count FROM {self.from_statement} WHERE {{
+                        {self.where_body}
+                    }}
+                """
             result = self._fetch_from_cache_or_query(query)
             count = int(result['results']['bindings'][0]['count']["value"])
             self.count = count
@@ -32,11 +41,16 @@ class SparQLOffsetFetcher:
 
     def next_page(self):
         if self.current_offset < self.count:
-            query = """ define sql:big-data-const 0 {prefixes} SELECT {select_columns} WHERE {{
-                        {where_body}
-                    }} LIMIT {page_size} OFFSET {offset}
-                    """.format(select_columns=self.select_columns, where_body=self.where_body, page_size=self.page_size,
-                               offset=self.current_offset, prefixes=self.prefixes)
+            if len(self.from_statement) == 0:
+                query = f""" define sql:big-data-const 0 {self.prefixes} SELECT {self.select_columns} WHERE {{
+                        {self.where_body}
+                    }} LIMIT {self.page_size} OFFSET {self.current_offset}
+                    """
+            else:
+                query = f""" define sql:big-data-const 0 {self.prefixes} SELECT {self.select_columns} FROM<{self.from_statement}> WHERE {{
+                                        {self.where_body}
+                                    }} LIMIT {self.page_size} OFFSET {self.current_offset}
+                                    """
             result = self._fetch_from_cache_or_query(query)
             self.current_offset += self.page_size
             return result['results']['bindings']
@@ -56,9 +70,9 @@ class SparQLOffsetFetcher:
         found = False
         cache_key = query
         # If redis was successfully initialized
-        if r is not None:
+        if self.redis is not None:
             # Get cache value and check whether it exists
-            val = r.get(cache_key)
+            val = self.redis.get(cache_key)
             if val is not None:
                 result = val
                 found = True
@@ -68,6 +82,6 @@ class SparQLOffsetFetcher:
             result = self.sparql_wrapper.query().response.read()
             if len(result) == 0:
                 result = ""
-            r.set(cache_key, result)
+            self.redis.set(cache_key, result)
         strres = str(result, 'utf-8')
         return json.loads(strres)
