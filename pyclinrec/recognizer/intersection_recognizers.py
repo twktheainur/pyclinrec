@@ -225,7 +225,7 @@ class IntersStemConceptRecognizer(IntersectionConceptRecognizer):
     def __init__(self, dictionary_loader: DictionaryLoader, stop_words_file: str, termination_terms_file: str,
                  language="en",
                  stemmer: StemmerI = None,
-                 filter=None):
+                 filters=None):
         """
         Constructs an InterStemConceptRecognizer instance.
             Parameters
