@@ -4,7 +4,7 @@ import regex
 
 from pyclinrec.dictionary import DictionaryLoader
 from pyclinrec.recognizer import ConceptRecognizer, Annotation
-from pyclinrec.spacy_utils import span_tokenize
+from pyclinrec.utils.spacy_utils import span_tokenize
 from recognizer import AnnotationFilter
 from lexpy.trie import Trie
 
