@@ -82,18 +82,18 @@ class MgrepDictionaryLoader(DictionaryLoader):
     def load(self):
         data = pandas.read_csv(self.dictionary_file, delimiter="\t", encoding="utf8")
         for index, row in tqdm(data.iterrows()):
-            id = int(row[0])
-            if id in self.dictionary_index.keys():
-                entry = self.dictionary_index[id]  # type : DictionaryEntry
+            cid = row[0]
+            if cid in self.dictionary_index.keys():
+                entry = self.dictionary_index[cid]  # type : DictionaryEntry
                 synonyms = entry.synonyms
                 if not synonyms:
                     entry.synonyms = []
                 entry.synonyms.append(row[1])
             else:
-                entry = DictionaryEntry(id, row[1])
+                entry = DictionaryEntry(cid, row[1])
                 self.dictionary.append(entry)
-                self.dictionary_index[id] = entry
-                self.reverse_index[row[1]] = id
+                self.dictionary_index[cid] = entry
+                self.reverse_index[row[1]] = cid
 
     def save(self, output_file: str):
         with open(output_file, "w", encoding="utf8") as output:
