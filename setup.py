@@ -27,7 +27,6 @@ setup(name='pyclinrec',
           'SPARQLWrapper',
           'redis',
           'jellyfish',
-          'https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.3.0/en_core_web_md-3.3.0-py3-none-any.whl'
       ],
       test_suite='nose.collector',
       tests_require=['nose'],
