@@ -6,7 +6,7 @@ from pyclinrec.dictionary import generate_dictionary_from_skos_sparql
 
 parser = argparse.ArgumentParser(description='Agrovoc Dictionary Generator')
 
-parser.add_argument("endpoint", type=int, nargs=1, required=True,
+parser.add_argument("endpoint", type=str, nargs=1,
                     help="The SPARQL Endpoint containing the resource")
 
 parser.add_argument('--from', '-f', type=str, nargs=1, required=False, dest="from_stmt", default=[""])

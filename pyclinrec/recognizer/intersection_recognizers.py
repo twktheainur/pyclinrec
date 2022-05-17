@@ -224,7 +224,8 @@ class IntersStemConceptRecognizer(IntersectionConceptRecognizer):
 
     def __init__(self, dictionary_loader: DictionaryLoader, stop_words_file: str, termination_terms_file: str,
                  language="en",
-                 stemmer: StemmerI = None):
+                 stemmer: StemmerI = None,
+                 filter=None):
         """
         Constructs an InterStemConceptRecognizer instance.
             Parameters
@@ -241,9 +242,11 @@ class IntersStemConceptRecognizer(IntersectionConceptRecognizer):
                      Default: en, Supported en,fr
                  stemmer: StemmerI
                      The stemmer to use, especially if lang is different from 'en' or 'fr'
+                 filters: List[AnnotationFilter]
+                    Override default annotation filters
         """
         super().__init__(dictionary_loader, stop_words_file, termination_terms_file, language,
-                         filters=[LevenshteinAnnotationFilter(theta=0.85)])
+                         filters=filters if filters is not None else [LevenshteinAnnotationFilter(theta=0.85)])
 
         if not stemmer:
             if self.language == "en":

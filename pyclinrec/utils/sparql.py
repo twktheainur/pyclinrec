@@ -17,22 +17,25 @@ class SparQLOffsetFetcher:
         self.prefixes = prefixes
         self.select_columns = select_columns
         sparql_wrapper.setReturnFormat(JSON)
+        self.redis = redis
         self.count = -1
         self.__get_count__()
-        self.redis = redis
 
     def __get_count__(self):
         if self.count == -1:
             if len(self.from_statement) == 0:
-                query = f"""define sql:big-data-const 0 {self.prefixes} SELECT count(distinct *) as ?count WHERE {{
+                query = f"""define sql:big-data-const 0
+                 {self.prefixes}
+                 SELECT count(distinct *) as ?count WHERE {{
                     {self.where_body}
                 }}
                 """
             else:
-                query = f"""define sql:big-data-const 0 {self.prefixes} SELECT count(distinct *) as ?count FROM {self.from_statement} WHERE {{
+                query = f"""define sql:big-data-const 0\n {self.prefixes}\n SELECT count(distinct *) as ?count \nFROM <{self.from_statement}> WHERE {{
                         {self.where_body}
                     }}
                 """
+                print(query)
             result = self._fetch_from_cache_or_query(query)
             count = int(result['results']['bindings'][0]['count']["value"])
             self.count = count
@@ -42,12 +45,12 @@ class SparQLOffsetFetcher:
     def next_page(self):
         if self.current_offset < self.count:
             if len(self.from_statement) == 0:
-                query = f""" define sql:big-data-const 0 {self.prefixes} SELECT {self.select_columns} WHERE {{
+                query = f""" define sql:big-data-const 0 \n{self.prefixes} \nSELECT {self.select_columns} WHERE {{
                         {self.where_body}
                     }} LIMIT {self.page_size} OFFSET {self.current_offset}
                     """
             else:
-                query = f""" define sql:big-data-const 0 {self.prefixes} SELECT {self.select_columns} FROM<{self.from_statement}> WHERE {{
+                query = f""" define sql:big-data-const 0\n {self.prefixes}\n SELECT {self.select_columns} FROM <{self.from_statement}> WHERE {{
                                         {self.where_body}
                                     }} LIMIT {self.page_size} OFFSET {self.current_offset}
                                     """
