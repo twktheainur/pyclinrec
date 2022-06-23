@@ -13,7 +13,7 @@ logger = getLogger("Dictionaries")
 
 
 class DictionaryEntry:
-    def __init__(self, id: int, label: str, definition: str = None, source: str = None, language: str = None,
+    def __init__(self, id: str, label: str, definition: str = None, source: str = None, language: str = None,
                  mappings: List[str] = None, cuis: List[str] = None, tuis: List[str] = None,
                  synonyms: List[str] = None):
         """
@@ -56,7 +56,7 @@ class DictionaryLoader(ABC):
     def save(self, output_file: str):
         pass
 
-    def entry_from_index(self, id: int) -> DictionaryEntry:
+    def entry_from_index(self, id: str) -> DictionaryEntry:
         """
         Get an entry from its index
 
@@ -80,7 +80,7 @@ class DictionaryLoader(ABC):
 class MgrepDictionaryLoader(DictionaryLoader):
 
     def load(self):
-        data = pandas.read_csv(self.dictionary_file, delimiter="\t", encoding="utf8")
+        data = pandas.read_csv(self.dictionary_file, delimiter="\t", encoding="utf8", dtype=str)
         for index, row in tqdm(data.iterrows()):
             cid = row[0]
             if cid in self.dictionary_index.keys():

@@ -164,7 +164,7 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
 
                 for concept in concepts:
                     key_parts = concept.split(":::")
-                    concept_id = int(key_parts[0])
+                    concept_id = str(key_parts[0])
 
                     annotation = Annotation(concept_id, concept_start, concept_end,
                                             input_text[concept_start:concept_end],
