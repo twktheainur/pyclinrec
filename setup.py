@@ -7,7 +7,7 @@ setup(name='pyclinrec',
       author='Andon Tchechmedjiev',
       author_email='andon.tchechmedjiev@mines-ales.fr',
       license='MIT',
-      packages=find_packages(include=['pyclinrec', 'pyclinrec.recognizer', 'pyclinrec.dictionary']),
+      packages=find_packages(include=['pyclinrec', 'pyclinrec.recognizer', 'pyclinrec.dictionary', 'pyclinrec.utils']),
       keywords='clinical nlp concept recognizer entity linking',
       classifiers=[
           'Development Status :: 3 - Alpha',
