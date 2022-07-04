@@ -3,11 +3,9 @@ from logging import getLogger
 from typing import List
 
 import pandas
-from SPARQLWrapper import SPARQLWrapper
-from rdflib import Namespace, Graph
 from tqdm import tqdm
 
-from pyclinrec.utils.sparql import SparQLOffsetFetcher
+
 
 logger = getLogger("Dictionaries")
 
@@ -147,10 +145,11 @@ def generate_brat_normalization_database(string_entries, target_file="brat_norm_
             target_handler.write(entry)
 
 
-def generate_dictionary_from_skos_file(self, graph: Graph = None, thesaurus_path=None,
+def generate_dictionary_from_skos_file(self, graph = None, thesaurus_path=None,
                                        save_file="agrovoc_dictionary.tsv",
                                        skos_xl_labels=True,
                                        lang="fr"):
+    from rdflib import Namespace, Graph
     if graph is None:
         self.graph = Graph()
     else:
@@ -214,6 +213,8 @@ def generate_dictionary_from_skos_sparql(endpoint,
                                          save_file="agrovoc_dictionary.tsv",
                                          skos_xl_labels=True,
                                          lang="fr", from_statement=""):
+    from pyclinrec.utils.sparql import SparQLOffsetFetcher
+    from SPARQLWrapper import SPARQLWrapper
     sparql = SPARQLWrapper(endpoint)
 
     string_entries = []
