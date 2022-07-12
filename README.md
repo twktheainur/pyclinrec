@@ -1,5 +1,8 @@
 # Python Concept Recognition Library
 
+![PyClinRec Logo](https://raw.githubusercontent.com/twktheainur/pyclinrec/master/resources/pyclinrec_logo.png)
+
+
 This package allows one to implement generic concept recognition components on the basis of a dictionary. A concept recognizer indexes the dictionaries and identifies concepts (begin and end offsets) in text. 
 
 
