@@ -85,6 +85,7 @@ class SparQLOffsetFetcher:
             result = self.sparql_wrapper.query().response.read()
             if len(result) == 0:
                 result = ""
-            self.redis.set(cache_key, result)
+            if self.redis is not None:
+                self.redis.set(cache_key, result)
         strres = str(result, 'utf-8')
         return json.loads(strres)
