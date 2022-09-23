@@ -45,7 +45,7 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
             self.spacy = en_core_web_md.load()
         elif language == 'fr':
             import fr_core_web_md
-            self.spacy = fr_core_web_md.load()
+            self.spacy = fr_core_news_md.load()
         else:
             raise ValueError(f"Unsupported language: {language}")
 
