@@ -31,7 +31,7 @@ class SparQLOffsetFetcher:
                 }}
                 """
             else:
-                query = f"""define sql:big-data-const 0\n {self.prefixes}\n SELECT count(distinct *) as ?count \nFROM <{self.from_statement}> WHERE {{
+                query = f"""define sql:big-data-const 0\n {self.prefixes}\n SELECT (count(distinct *) as ?count) \nFROM <{self.from_statement}> WHERE {{
                         {self.where_body}
                     }}
                 """
