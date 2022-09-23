@@ -220,14 +220,14 @@ def generate_dictionary_from_skos_sparql(endpoint,
     string_entries = []
     if skos_xl_labels:
         fetcher = SparQLOffsetFetcher(sparql, 9000,
-                                      where_body=f"?x a skos:Concept;\nskosxl:prefLabel ?l.\n ?l skosxl:literalForm ?lf.\nFILTER(lang(?lf)='{lang}'",
+                                      where_body=f"?x a skos:Concept;\nskosxl:prefLabel ?l.\n ?l skosxl:literalForm ?lf.\nFILTER(lang(?lf)='{lang}')",
                                       select_columns="?x ?lf",
                                       prefixes="prefix skos: <http://www.w3.org/2004/02/skos/core#>\n"
                                                "prefix skosxl: <http://www.w3.org/2008/05/skos-xl#>",
                                       from_statement=from_statement)
     else:
         fetcher = SparQLOffsetFetcher(sparql, 9000,
-                                      where_body=f"?x a skos:Concept;\nskos:prefLabel ?lf.\nFILTER(lang(?lf)='{lang}'",
+                                      where_body=f"?x a skos:Concept;\nskos:prefLabel ?lf.\nFILTER(lang(?lf)='{lang}')",
                                       select_columns="?x ?lf",
                                       prefixes="prefix skos: <http://www.w3.org/2004/02/skos/core#>",
                                       from_statement=from_statement)
@@ -236,14 +236,14 @@ def generate_dictionary_from_skos_sparql(endpoint,
         string_entries.append((result["x"]["value"], result["lf"]["value"]))
     if skos_xl_labels:
         fetcher = SparQLOffsetFetcher(sparql, 9000,
-                                      where_body=f"?x a skos:Concept;\nskosxl:altLabel ?l.\n ?l skosxl:literalForm ?lf.\nFILTER(lang(?lf)='{lang}'",
+                                      where_body=f"?x a skos:Concept;\nskosxl:altLabel ?l.\n ?l skosxl:literalForm ?lf.\nFILTER(lang(?lf)='{lang}')",
                                       select_columns="?x ?lf",
                                       prefixes="prefix skos: <http://www.w3.org/2004/02/skos/core#>\n"
                                                "prefix skosxl: <http://www.w3.org/2008/05/skos-xl#>",
                                       from_statement=from_statement)
     else:
         fetcher = SparQLOffsetFetcher(sparql, 9000,
-                                      where_body=f"?x a skos:Concept;\nskos:altLabel ?lf.\nFILTER(lang(?lf)='{lang}'",
+                                      where_body=f"?x a skos:Concept;\nskos:altLabel ?lf.\nFILTER(lang(?lf)='{lang}')",
                                       select_columns="?x ?lf",
                                       prefixes="prefix skos: <http://www.w3.org/2004/02/skos/core#>",
                                       from_statement=from_statement)
