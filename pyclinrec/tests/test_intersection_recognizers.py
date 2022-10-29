@@ -7,7 +7,6 @@ from pyclinrec.recognizer import IntersStemConceptRecognizer
 
 import logging
 
-from string_matching_recognizers import TrieApproxRecognizer
 
 logger = logging.getLogger()
 fhandler = logging.FileHandler(filename='tests.log', mode='a')
