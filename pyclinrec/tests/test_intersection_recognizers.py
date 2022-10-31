@@ -21,7 +21,7 @@ class TestRecognizers(TestCase):
     def setUp(self):
         logging.info("Starting tests for pyclinrec.recognizers")
         self.dictionary_loader = StringDictionaryLoader(
-            [("1", "bright cat"), ("2", "Brighton"), ("3", "mechanical"), ('4', "cet"), ('5', "caets"), ('6', 'cat'), ])
+            [("1", "bright cat"), ("2", "Brighton"), ("3", "mechanical"), ('4', "cet"), ('5', "caets"), ('6', 'cat'), ('7', 'a')])
 
     def _generic_english_1(self, recognizer):
         # Base annotation
@@ -53,39 +53,32 @@ class TestRecognizers(TestCase):
         logging.debug(f"Test successful for {recognizer.__class__} DEBUG")
 
     def _generic_english_single_stem_artifacts(self, recognizer):
-        spans, tokens, annotations = recognizer.annotate("Bright children love Brighton's bright lights.")
+        spans, tokens, annotations = recognizer.annotate("A bright cat loves Brighton's bright lights.")
         annotations = list(annotations)
-        annotations.sort(key=lambda a: a.start)
-        self.assertTrue(spans[3][0] == annotations[0].start and spans[3][1] == annotations[0].end)
+        annotations.sort(key=lambda a: a.matched_length)
+        self.assertTrue(len(annotations[0].matched_text)>3)
         logging.info(f"Test successful for {recognizer.__class__} INFO")
         logging.debug(f"Test successful for {recognizer.__class__} DEBUG")
 
     def test_stem_recognize_english_1(self):
         recognizer = IntersStemConceptRecognizer(self.dictionary_loader, "pyclinrec/stopwordsen.txt",
-                                                 "pyclinrec/termination_termsen.txt")
+                                                 "pyclinrec/termination_termsen.txt", filters=[])
         recognizer.initialize()
 
         self._generic_english_1(recognizer)
 
     def test_stem_recognize_english_leading_space_double_spaces(self):
         recognizer = IntersStemConceptRecognizer(self.dictionary_loader, "pyclinrec/stopwordsen.txt",
-                                                 "pyclinrec/termination_termsen.txt")
+                                                 "pyclinrec/termination_termsen.txt", filters=[])
         recognizer.initialize()
 
         self._generic_english_leading_space_double_spaces(recognizer)
-
-    def test_stem_recognize_english_single_stem_artifacts(self):
-        recognizer = IntersStemConceptRecognizer(self.dictionary_loader, "pyclinrec/stopwordsen.txt",
-                                                 "pyclinrec/termination_termsen.txt")
-        recognizer.initialize()
-
-        self._generic_english_single_stem_artifacts(recognizer)
 
     def test_agrovoc_sentence_end_bug(self):
         dictionary_loader = StringDictionaryLoader(
             [("1", "spectroscopy"), ("2", "technique"), ("3", "according")])
         recognizer = IntersStemConceptRecognizer(dictionary_loader, "pyclinrec/stopwordsen.txt",
-                                                 "pyclinrec/termination_termsen.txt")
+                                                 "pyclinrec/termination_termsen.txt", filters=[])
         recognizer.initialize()
         text = "infrared spectroscopy technique (NIRS). According to"
         spans, tokens, annotations = recognizer.annotate(text)
@@ -93,6 +86,13 @@ class TestRecognizers(TestCase):
         annotations.sort(key=lambda a: a.start)
         assert (spans[-2][0] == annotations[-1].start and spans[-2][1] == annotations[-1].end and annotations[
             -1].matched_text == "According")
+
+    def test_stem_recognize_english_short_match_filter(self):
+        recognizer = IntersStemConceptRecognizer(self.dictionary_loader, "pyclinrec/stopwordsen.txt",
+                                                 "pyclinrec/termination_termsen.txt")
+        recognizer.initialize()
+
+        self._generic_english_single_stem_artifacts(recognizer)
 
     # def test_approxtrie_recognize_english_1(self):
     #     recognizer = TrieApproxRecognizer(self.dictionary_loader)

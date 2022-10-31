@@ -190,17 +190,18 @@ class LevenshteinAnnotationFilter(AnnotationFilter):
         self.theta = theta
 
     def apply_filter(self, annotations: Set[Annotation], text, tokens_spans, tokens) -> Set[Annotation]:
-        final_annotations = []
+        final_annotations = set()
         for annotation in annotations:
             if annotation.matched_length > 1:
-                final_annotations.append(annotation)
+                final_annotations.add(annotation)
             elif annotation.matched_length == 1:
                 if len(annotation.matched_text) <= 3:
                     if annotation.matched_length == annotation.concept:
-                        final_annotations.append(annotation)
+                        final_annotations.add(annotation)
                 elif self._max_levenshtein_less_than_theta(annotation.matched_text, annotation.concept):
-                    final_annotations.append(annotation)
-            return annotations
+                    final_annotations.add(annotation)
+
+        return final_annotations
 
     def _max_levenshtein_less_than_theta(self, mention: str, concept: Concept):
         distances = []
