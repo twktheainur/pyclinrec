@@ -8,4 +8,4 @@ requests
 Metafone
 jellyfish
 SPARQLWrapper
-en_core_web_md
+
