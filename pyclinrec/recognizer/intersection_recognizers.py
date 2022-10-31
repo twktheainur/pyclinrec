@@ -1,18 +1,14 @@
 from abc import ABC, abstractmethod
 from typing import Set, Tuple, List
 
+import jellyfish
+import numpy
 import regex
-from nltk import TreebankWordTokenizer, StemmerI, SnowballStemmer
-from nltk.tokenize import word_tokenize
-from tqdm import tqdm
-from metaphone import doublemetaphone
+from nltk import StemmerI, SnowballStemmer
 
 from pyclinrec.dictionary import DictionaryLoader
 from pyclinrec.recognizer import ConceptRecognizer, Concept, Annotation, AnnotationFilter
 from pyclinrec.utils.spacy_utils import span_tokenize
-
-import numpy
-import jellyfish
 
 
 class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
@@ -39,6 +35,7 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
         self.termination_terms = self._load_word_list(termination_terms_file)
         self.unigram_root_index = dict()  # record the phone and give an Id
         self.concept_length_index = dict()  # record the phone and give the length of the expression
+        self.unigram_concept_count_histogram = dict()
 
         if language == 'en':
             import en_core_web_md
@@ -64,7 +61,7 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
         label_index = 0
         for label in labels:
 
-            normalized = punctuation_remove.sub(" ", label).replace("-", " ").lower()
+            normalized = punctuation_remove.sub(" ", label).lower()
             # We tokenize the label
             tokens, _ = span_tokenize(self.spacy, normalized)
 
@@ -82,6 +79,13 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
                             token_phone] = set()
                     # if it already existed we add the concept id to the corresponding set
                     self.unigram_root_index[token_phone].add(key)
+                    count_key = (key, token_phone)
+                    if count_key not in self.unigram_concept_count_histogram:
+                        self.unigram_concept_count_histogram[count_key] = 1
+                    else:
+                        self.unigram_concept_count_histogram[count_key] = self.unigram_concept_count_histogram[
+                                                                              count_key] + 1
+
                     concept_token_count += 1
             self.concept_length_index[key] = concept_token_count
             label_index += 1
@@ -145,10 +149,17 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
 
                         # if we find none we stop the matching here
                         if len(next_concepts) == 0:
-
                             break
-
                         else:
+                            # Filtering for duplicate words if concept doens't also contain duplication
+                            # Otherwise drug-drug in drug-drug interaction would match any concept with a two token label where
+                            # drug appears only once in the label. e.g. drug resistant would match on drug-drug.
+                            filtered_next_concepts = set()
+                            for concept_key in next_concepts:
+                                if next_token_phone == token_root \
+                                        and self.unigram_concept_count_histogram[(concept_key, token_root)] < 2:
+                                    break
+
                             # if we find a match, then we update the current end position to that of the currently
                             # matching token and update the intersected matched concept buffer
                             concepts = next_concepts
@@ -194,12 +205,10 @@ class LevenshteinAnnotationFilter(AnnotationFilter):
         for annotation in annotations:
             if annotation.matched_length > 1:
                 final_annotations.add(annotation)
-            elif annotation.matched_length == 1:
-                if len(annotation.matched_text) <= 3:
-                    if annotation.matched_length == annotation.concept:
-                        final_annotations.add(annotation)
-                elif self._max_levenshtein_less_than_theta(annotation.matched_text, annotation.concept):
+            elif annotation.matched_length == 1 \
+                and self._max_levenshtein_less_than_theta(annotation.matched_text, annotation.concept):
                     final_annotations.add(annotation)
+
 
         return final_annotations
 

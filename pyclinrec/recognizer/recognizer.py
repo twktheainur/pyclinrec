@@ -23,6 +23,12 @@ class Concept:
         if label_embedding is not None:
             self.label_embeddings[label] = label_embedding
 
+    def __eq__(self, other):
+        return self.uri == other.uri
+
+    def __str__(self):
+        return "Concept [" + ", ".join(self.labels) + " | " + self.definition + " ]"
+
 
 class Annotation:
     def __init__(self, concept_id, start, end, matched_text, matched_length, label_key: str = None,
