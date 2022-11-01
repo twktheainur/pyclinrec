@@ -56,6 +56,7 @@ class TestRecognizers(TestCase):
         spans, tokens, annotations = recognizer.annotate("A bright cat loves Brighton's bright lights.")
         annotations = list(annotations)
         annotations.sort(key=lambda a: a.matched_length)
+        print(annotations[0])
         self.assertTrue(len(annotations[0].matched_text) > 3)
         logging.info(f"Test successful for {recognizer.__class__} INFO")
         logging.debug(f"Test successful for {recognizer.__class__} DEBUG")
