@@ -151,18 +151,19 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
                         if len(next_concepts) == 0:
                             break
                         else:
-                            # Filtering for duplicate words if concept doens't also contain duplication
-                            # Otherwise drug-drug in drug-drug interaction would match any concept with a two token label where
-                            # drug appears only once in the label. e.g. drug resistant would match on drug-drug.
+                            # Filtering for duplicate words if concept doesn't also contain duplication
+                            # Otherwise drug-drug in drug-drug interaction would match any concept with a two
+                            # token label where drug appears only once in the label.
+                            # e.g. drug resistant would match on drug-drug.
                             filtered_next_concepts = set()
                             for concept_key in next_concepts:
-                                if next_token_phone == token_root \
-                                        and self.unigram_concept_count_histogram[(concept_key, token_root)] < 2:
-                                    break
+                                if not (next_token_phone == token_root and
+                                        self.unigram_concept_count_histogram[(concept_key, token_root)] < 2):
+                                    filtered_next_concepts.add(concept_key)
 
                             # if we find a match, then we update the current end position to that of the currently
                             # matching token and update the intersected matched concept buffer
-                            concepts = next_concepts
+                            concepts = next_concepts if len(filtered_next_concepts) else filtered_next_concepts
                             concept_end = next_span[1]
 
                     # if we arrive here the current token has matched, we keep count of the current match length
@@ -206,9 +207,8 @@ class LevenshteinAnnotationFilter(AnnotationFilter):
             if annotation.matched_length > 1:
                 final_annotations.add(annotation)
             elif annotation.matched_length == 1 \
-                and self._max_levenshtein_less_than_theta(annotation.matched_text, annotation.concept):
-                    final_annotations.add(annotation)
-
+                    and self._max_levenshtein_less_than_theta(annotation.matched_text, annotation.concept):
+                final_annotations.add(annotation)
 
         return final_annotations
 
