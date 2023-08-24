@@ -1,3 +1,4 @@
+import contextlib
 import json
 from abc import abstractmethod, ABC
 
@@ -41,13 +42,10 @@ class BioportalDictionaryEnrichment(DictionaryEnrichment):
                 synonyms = set()
                 for item in collection:
                     links.append(item['@id'])
-                    try:
+                    with contextlib.suppress(KeyError):
                         cuis.update(item['cui'])
                         tuis.update(item['semanticType'])
                         synonyms.update(item['synonym'])
-                    except KeyError:
-                        pass
-
                 entry.mappings = links
                 entry.synonyms = synonyms
                 entry.cuis = cuis

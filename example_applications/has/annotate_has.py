@@ -10,5 +10,5 @@ recognizer = IntersStemConceptRecognizer(dictionary_loader=loader,
 recognizer.initialize()
 
 with open("data/allText.txt") as f:
-    annotations = recognizer.match_mentions(f.read())
+    annotations = recognizer(f.read())
     print(annotations)

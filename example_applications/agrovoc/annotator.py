@@ -13,4 +13,4 @@ class AgrovocAnnotator:
         self.concept_recognizer.initialize()
 
     def annotate(self, text):
-        return self.concept_recognizer.annotate(text)
+        return self.concept_recognizer(text)

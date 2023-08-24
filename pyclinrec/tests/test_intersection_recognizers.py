@@ -82,7 +82,7 @@ class TestRecognizers(TestCase):
                                                  "pyclinrec/termination_termsen.txt", filters=[])
         recognizer.initialize()
         text = "infrared spectroscopy technique (NIRS). According to"
-        spans, tokens, annotations = recognizer.annotate(text)
+        spans, tokens, annotations = recognizer.__call__(text)
         annotations = list(annotations)
         annotations.sort(key=lambda a: a.start)
         self.assertTrue (spans[-2][0] == annotations[-1].start and spans[-2][1] == annotations[-1].end and annotations[
@@ -103,7 +103,7 @@ class TestRecognizers(TestCase):
         recognizer = IntersStemConceptRecognizer(dictionary_loader, "pyclinrec/stopwordsen.txt",
                                                  "pyclinrec/termination_termsen.txt")
         recognizer.initialize()
-        spans, tokens, annotations = recognizer.annotate(text)
+        spans, tokens, annotations = recognizer.__call__(text)
         self.assertTrue(len(annotations) == 2)
 
     # def test_approxtrie_recognize_english_1(self):

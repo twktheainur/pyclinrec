@@ -8,24 +8,48 @@ from transformers import AutoTokenizer, AutoModel, AutoConfig
 
 from pyclinrec.dictionary import DictionaryLoader
 from pyclinrec.recognizer import ConceptRecognizer, Concept, Annotation
+from pyclinrec.recognizer.intersection_recognizers import IntersectionConceptRecognizer
+from transformers import BitsAndBytesConfig
 
+from torch.utils.data import Dataset, DataLoader
 
-class IntersEmbeddingConceptRecognizer(ConceptRecognizer):
+class _LabelDataset(Dataset):
+    def __init__(self, labels, concept_ids) -> None:
+        super().__init__()
+        self.labels = labels
+        self.concept_ids = concept_ids
+        
+    def __len__(self):
+        return len(self.labels)
+    
+    def __getitem__(self, index):
+        return self.labels[index], self.concept_ids[index]
+    
+    def get_concept_id(self, index):
+        return self.concept_ids[index]
+        
 
-    def __init__(self, dictionary_loader: DictionaryLoader, stop_words_file: str, termination_terms_file: str,
-                 tokenizer: AutoTokenizer, model: AutoModel, config: AutoConfig):
-        super().__init__(stop_words_file, termination_terms_file, dictionary_loader)
-        self.unigram_index = dict()  # record the stem and give an Id
-        self.concept_token_vector_index = dict()
-        self.concept_length_index = dict()  # record the stem and give the length of the expression
-        self.model = model
-        self.tokenizer = tokenizer
-        self.config = config
+class IntersEmbeddingConceptRecognizer(IntersectionConceptRecognizer):
+
+    def __init__(self, dictionary_loader: DictionaryLoader, stop_words_file: str, termination_terms_file: str, language: str,
+                model_name_or_path: str, batch_size=32):
+        super().__init__(dictionary_loader, stop_words_file, termination_terms_file, language)
+        self.concept_token_vector_index = {}
+        self.batch_size = batch_size
+        
+        nf4_config = BitsAndBytesConfig(
+            load_in_4bit=False,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_compute_dtype=torch.bfloat16
+        )
+        
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
+        self.model = AutoModel.from_pretrained(model_name_or_path, quantization_config=nf4_config)
         self.unk_token_id = self.tokenizer.unk_token_id
         self.cls_token_id = self.tokenizer.cls_token_id
         self.pad_token_id = self.tokenizer.pad_token_id
         self.eos_token_id = self.tokenizer.eos_token_id
-        self.punctuation_regexp = regex.compile('\p{P}', re.UNICODE)
         self.stop_words = self._piece_wise_tokenize_token_list(self.stop_words)
         self.termination_terms = self._piece_wise_tokenize_token_list(self.termination_terms)
 
@@ -34,17 +58,26 @@ class IntersEmbeddingConceptRecognizer(ConceptRecognizer):
         self.dictionary_loader.load()
         dictionary = self.dictionary_loader.dictionary  # type : List[DictionaryEntry]
         print("Now indexing the dictionary...")
-        for entry in tqdm(dictionary):
+        concept_labels = []
+        concept_label_ids = []
+        for entry in tqdm(list(dictionary), desc="Loading all labels"):
             # we split concept ids from labels
             # fields = line.split("\t")
             label = entry.label
             concept_id = entry.id
+            
+            concept_labels.append(label)
+            concept_label_ids.append(concept_id)
 
-            labels = [label]
             if entry.synonyms:
-                labels.extend(entry.synonyms)
-
-            self._load_concept_labels(concept_id, labels)
+                concept_labels.extend(entry.synonyms)
+                concept_label_ids.append(concept_id)
+            # self._load_concept_labels(concept_id, labels)
+        
+        dataset = _LabelDataset(concept_labels, concept_label_ids)
+        dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=False, num_workers=8)
+        for labels, concept_ids in tqdm(dataloader, desc="Embedding all labels"):
+            self._embed_batch_concept_labels(list(concept_ids), list(labels))
 
     def _piece_wise_tokenize_token_list(self, token_list):
         final_token_list = []
@@ -55,50 +88,48 @@ class IntersEmbeddingConceptRecognizer(ConceptRecognizer):
 
         return self.tokenizer.convert_tokens_to_ids(final_token_list)
 
-    def _load_concept_labels(self, concept_id, labels):
-        label_index = 0
-        for label in labels:
-            inputs = self.tokenizer.encode_plus(label, add_special_tokens=True, max_length=512, pad_to_max_length=True,
-                                                return_attention_mask=True)
-            tokens = inputs['input_ids']
-            att_masks = inputs['attention_mask']
-            last_token = att_masks.index(0)
+    def _embed_batch_concept_labels(self, concept_ids, labels):
 
-            for key in inputs.keys():
-                inputs[key] = torch.tensor(inputs[key], dtype=torch.long)
-                inputs[key] = inputs[key].reshape((1, len(inputs[key])))
+        inputs = self.tokenizer(labels, max_length=512, padding='max_length', return_attention_mask=True, return_tensors='pt')
+        tokens = inputs['input_ids']
+        att_masks = inputs['attention_mask']
+        last_tokens = [(att_mask == 0).nonzero()[0].item() for att_mask in att_masks]
+        with torch.no_grad():
+            model_output = self.model(**inputs)
+            per_concept_label_indexes = {}
+            for vector_index in range(model_output.last_hidden_state.shape[0]):
+                    
+                token_vectors = model_output['last_hidden_state'][vector_index, 0:last_tokens[vector_index] - 1, :]
+                concept_id = concept_ids[vector_index]
+                if concept_id not in self.concept_index:
+                    self.concept_index[concept_id] = Concept(concept_id)
+                concept = self.concept_index[concept_id]
+                concept.add_label(labels[vector_index], label_embedding=model_output['pooler_output'])
+                concept_token_count = 0
+                if concept_id not in per_concept_label_indexes:
+                    per_concept_label_indexes[concept_id] = 1
+                else:
+                    per_concept_label_indexes[concept_id] += 1
+                key = f"{str(concept_id)}:::{str(per_concept_label_indexes[concept_id])}"
+                last_token_index = last_tokens[vector_index] - 1
+                if len(tokens.shape) > 1:
+                    tokens = tokens[vector_index,:last_token_index]
+                else:
+                    tokens = tokens[:last_token_index]
+                for token in tokens:
+                    token = token.item()
+                    # We skip words that belong to the stop list and words that contain non alphanumerical characters
+                    # we create the dictionary entry if it did not exist before
+                    if token not in self.unigram_root_index:
+                        self.unigram_root_index[token] = set()
+                    # if it already existed we add the concept id to the corresponding set
+                    self.unigram_root_index[token].add(key)
 
-            last_outputs, class_output = self.model(**inputs)
-            token_vectors = last_outputs[:, 0:last_token - 1, :]
-
-            concept = Concept(concept_id)
-            concept.add_label(label, label_embedding=class_output)
-            self.concept_index[concept_id] = concept
-            # We tokenize the label
-            concept_token_count = 0
-            # For each token
-            key = str(concept_id) + ":::" + str(label_index)
-            last_token_index = tokens.index(0) - 1
-            tokens = tokens[:last_token_index]
-            token_index = 0
-            for token in tokens:
-                # We skip words that belong to the stop list and words that contain non alphanumerical characters
-                # we create the dictionary entry if it did not exist before
-                if token not in self.unigram_index:
-                    self.unigram_index[token] = set()
-                # if it already existed we add the concept id to the corresponding set
-                self.unigram_index[token].add(key)
-
-                if token not in self.concept_token_vector_index:
-                    self.concept_token_vector_index[token] = dict()
-                    token_vector = token_vectors[:, token_index, :]
-                    new_shape = (token_vector.shape[1])
-                    self.concept_token_vector_index[token][concept_id] = token_vector.reshape(new_shape)
-
-                token_index += 1
-                concept_token_count += 1
-            self.concept_length_index[key] = concept_token_count
-            label_index += 1
+                    if token not in self.concept_token_vector_index:
+                        self.concept_token_vector_index[token] = {}
+                    self.concept_token_vector_index[token][concept_id] = token_vectors[concept_token_count, :]
+                    concept_token_count += 1
+                self.concept_length_index[key] = concept_token_count
 
     def _tokens_to_spans(self, tokens, text: str, initial_start_offset=0):
         spans = []  # type: List[Tuple[int, int, str]]
@@ -122,100 +153,11 @@ class IntersEmbeddingConceptRecognizer(ConceptRecognizer):
                 start_offset = end_offset
         return spans
 
-    def annotate(self, input_text) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
-        annotations = []
-
-        tokens = self.tokenizer.tokenize(input_text)
-        token_ids = self.tokenizer.convert_tokens_to_ids(tokens)
-
-        len_leading_whitespaces = len(input_text) - len(input_text.lstrip())
-        token_spans = self._tokens_to_spans(tokens, input_text, initial_start_offset=len_leading_whitespaces)
-
-        print(tokens)
-        print(token_ids)
-        print(token_spans)
-
-        # we iterate over tokens one by one until we reach the end of the text
-        current_token_span_index = 0
-        while current_token_span_index < len(token_spans):
-            # we get the current token span
-            current_span = token_spans[current_token_span_index]
-
-            # we extract the string of the token from the text
-            token = input_text[current_span[0]:current_span[1]]
-
-            # if the word is a stoplist term or a termination term we skip it
-            if token not in self.stop_words and token not in self.termination_terms:
-                # We get the concept ids matching the stem of the current token
-                # Double stemming ensures we come back to the most elementary root, ensure match between nouns and
-                # adjectives with the same root
-                concepts = self.concepts_from_stem(self.stem(token))
-
-                # this is the start position of the first token of a matching sequence
-                concept_start = current_span[0]
-                # For now we have matched a single terms, so currently the end position will be that of the current
-                # token
-                concept_end = current_span[1]
-                match_cursor = 1
-                stop_count = 0
-                while current_token_span_index + match_cursor < len(token_spans):
-
-                    # We get the next token and position span
-                    next_span = token_spans[current_token_span_index + match_cursor]
-                    next_token = input_text[next_span[0]:next_span[1]]
-
-                    # if the token is in the termination list the matching process ends here
-                    if next_token in self.termination_terms:
-                        break
-                    # If the token is in the Stop list we skip it and increment the count of the skipped words
-                    # We will need to subtract this from the total number of tokens for the concept
-                    elif next_token in self.stop_words:
-                        stop_count += 1
-                    # Otherwise we try to find a match for the token stem's in the dictionary index
-                    else:
-                        # we stem the toke text
-                        next_token_stem = self.stem(next_token)
-
-                        # We try to find matching concepts and compute the intersection with previously identified
-                        # concepts
-
-                        next_concepts = self.concepts_from_stem(next_token_stem) & concepts
-
-                        # if we find none we stop the matching here
-                        if len(next_concepts) == 0:
-
-                            break
-
-                        else:
-                            # if we find a match, then we update the current end position to that of the currently
-                            # matching token and update the intersected matched concept buffer
-                            concepts = next_concepts
-                            concept_end = next_span[1]
-
-                    # if we arrive here the current token has matched, we keep count of the current match length
-                    match_cursor += 1
-
-                # Once we get out of the loop we reconstruct the matches from the concepts remaining in the set
-                # after successive intersections, if concepts is empty there was no match and so
-                # Tokens.conceptsToAnnotationTokens will return an empty list otherwise we get a list of
-                # AnnotationToken objects instances that we add to the list of identified concepts
-
-                for concept in concepts:
-                    key_parts = concept.split(":::")
-                    concept_id = key_parts[0]
-                    annotation = Annotation(concept_id, concept_start, concept_end, input_text[concept_start:concept_end],
-                                            match_cursor - stop_count, label_key=concept,
-                                            concept=self.concept_index[concept_id])
-                    annotations.append(annotation)
-
-            current_token_span_index += 1
-        # Here we filter the annotations to keep only those where the concept length matches the length of the
-        # identified annotation
-        return set([annotation for annotation in annotations if
-                    annotation.matched_length == self.concept_length_index[annotation.label_key]])
-
-    def concepts_from_stem(self, stem):
-        if stem not in self.unigram_vector_index:
+    def _concept_from_root(self, root) -> Set[Concept]:
+        if root not in self.unigram_root_index:
             return set()
         else:
-            return self.unigram_vector_index[stem]
+            return self.unigram_root_index[root]
+        
+    def _root_function(self, token) -> str:
+        return token

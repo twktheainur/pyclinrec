@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>pyclinrec.recognizer.intersection_recognizers API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>pyclinrec.recognizer.intersection_recognizers</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from abc import ABC, abstractmethod
+from typing import Set, Tuple, List
+
+import jellyfish
+import numpy
+from nltk import StemmerI, SnowballStemmer
+
+from pyclinrec.dictionary import DictionaryLoader
+from pyclinrec.recognizer import (
+    ConceptRecognizer,
+    Concept,
+    Annotation,
+    AnnotationFilter,
+)
+from pyclinrec.utils.re import PUNCTUATION_REGEX
+from pyclinrec.utils.spacy_utils import span_tokenize
+
+
+class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
+    def __init__(
+        self,
+        dictionary_loader: DictionaryLoader,
+        stop_words_file: str,
+        termination_terms_file: str,
+        language=&#34;en&#34;,
+        filters: List[AnnotationFilter] = None,
+    ):
+        &#34;&#34;&#34;
+        Parameters
+        ----------
+            dictionary_loader: DictionaryLoader
+                The dictionary loader that will provide the dictionary contents
+            stop_words_file: str
+                Path to a text file containing a list of stop words (one per line)
+            termination_terms_file: str
+                Path to a text file containing a list of termination terms that stop the production of additional
+                tokens in a matching mention.
+            language: str
+                The language of the text that will processed (affects the choice of tokenizer and stemmer).
+            filters: List[AnnotationFilter]
+                A list of filters to apply post recognition
+        &#34;&#34;&#34;
+        
+        super().__init__(dictionary_loader, language=language, filters=filters)
+        self.stop_words = self._load_word_list(stop_words_file)
+        self.termination_terms = self._load_word_list(termination_terms_file)
+        self.unigram_root_index = {}
+        self.concept_length_index = {}
+        self.unigram_concept_count_histogram = {}
+
+        if language == &#34;en&#34;:
+            import en_core_web_md
+
+            self.spacy = en_core_web_md.load()
+        elif language == &#34;fr&#34;:
+            import fr_core_news_md
+
+            self.spacy = fr_core_news_md.load()
+        else:
+            raise ValueError(f&#34;Unsupported language: {language}&#34;)
+
+    @abstractmethod
+    def _root_function(self, token) -&gt; str:
+        pass
+
+    def _concept_from_root(self, root) -&gt; Set[Concept]:
+        if root not in self.unigram_root_index:
+            return set()
+        else:
+            return self.unigram_root_index[root]
+
+    def _embed_batch_concept_labels(self, concept_id, labels):
+        for label_index, label in enumerate(labels):
+            normalized = PUNCTUATION_REGEX.sub(&#34; &#34;, label).lower()
+            # We tokenize the label
+            tokens, _ = span_tokenize(self.spacy, normalized)
+
+            concept_token_count = 0
+            # For each token
+            key = f&#34;{str(concept_id)}:::{str(label_index)}&#34;
+            for token in tokens:
+                # We skip words that belong to the stop list and words that contain non alphanumerical characters
+                if token not in self.stop_words:
+                    token_phone = self._root_function(token)
+
+                    # we create the dictionary entry if it did not exist before
+                    if token_phone not in self.unigram_root_index:
+                        self.unigram_root_index[token_phone] = set()
+                    # if it already existed we add the concept id to the corresponding set
+                    self.unigram_root_index[token_phone].add(key)
+                    count_key = (key, token_phone)
+                    self.unigram_concept_count_histogram[count_key] = (
+                        1
+                        if count_key not in self.unigram_concept_count_histogram
+                        else self.unigram_concept_count_histogram[count_key] + 1
+                    )
+                    concept_token_count += 1
+            self.concept_length_index[key] = concept_token_count
+
+    def _match_subsequence(
+        self,
+        input_text,
+        token_spans,
+        current_span,
+        current_token_span_index,
+        token_root,
+        concepts,
+    ) -&gt; set[str]:
+        concept_start = current_span[0]
+        # For now we have matched a single terms, so currently the end position will be that of the current token
+        concept_end = current_span[1]
+        match_cursor = 1
+        stop_count = 0
+        while (
+            current_token_span_index + match_cursor &lt; len(token_spans)
+            and not self._is_span_termination_token(token_spans[current_token_span_index + match_cursor], input_text)
+        ):
+            # We get the next token and position span
+            next_span = token_spans[current_token_span_index + match_cursor]
+            next_token = input_text[next_span[0] : next_span[1]]
+
+            #  if the token is in the termination list the matching process ends here
+
+            if next_token not in self.stop_words:
+                next_token_root = self._root_function(next_token)
+
+                # We try to find matching concepts and compute the intersection with previously identified concepts
+                next_concepts = self._concept_from_root(next_token_root) &amp; concepts
+
+                filtered_next_concepts = self._filter_next_concepts(
+                    token_root, next_token_root, next_concepts
+                )
+                if len(filtered_next_concepts) == 0:
+                    break
+                concept_end = next_span[1]
+                concepts = (
+                    next_concepts
+                    if len(filtered_next_concepts)
+                    else filtered_next_concepts
+                )
+
+            else:
+                stop_count += 1
+            match_cursor += 1
+        return concept_start, concept_end, match_cursor, stop_count, concepts
+
+    def _filter_next_concepts(self, token_root, next_token_root, next_concepts):
+        return {
+            concept_key
+            for concept_key in next_concepts
+            if next_token_root != token_root
+            or self.unigram_concept_count_histogram[(concept_key, token_root)] &gt;= 2
+        }
+
+    def _match_mentions(
+        self, input_text
+    ) -&gt; Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
+        annotations = []
+
+        # We split the text into token spans (begin and end position from the start of the text)
+        tokens, token_spans = span_tokenize(self.spacy, input_text)
+
+        # we iterate over tokens one by one until we reach the end of the text
+        current_token_span_index = 0
+        while current_token_span_index &lt; len(token_spans):
+            # we get the current token span
+            current_span = token_spans[current_token_span_index]
+
+            token_text = input_text[current_span[0] : current_span[1]]
+
+            # if the word is a stop list term or a termination term we skip it
+            if not self._is_stop_or_termination_token(token_text):
+                # We get the concept ids matching the root of the current token
+                token_root = self._root_function(token_text)
+                concepts = self._concept_from_root(token_root)
+
+                (
+                    concept_start,
+                    concept_end,
+                    match_cursor,
+                    stop_count,
+                    concepts,
+                ) = self._match_subsequence(
+                    input_text,
+                    token_spans,
+                    current_span,
+                    current_token_span_index,
+                    token_root,
+                    concepts,
+                )
+
+                # Once we get out of the loop we reconstruct the matches from the concepts remaining in the set
+                # after successive intersections, if concepts is empty there was no match and so
+                # Tokens.conceptsToAnnotationTokens will return an empty list otherwise we get a list of
+                # AnnotationToken objects instances that we add to the list of identified concepts
+
+                annotations.extend(
+                    self._create_annotations(
+                        input_text,
+                        concepts,
+                        concept_start,
+                        concept_end,
+                        match_cursor,
+                        stop_count,
+                    )
+                )
+
+            current_token_span_index += 1
+
+        return (
+            token_spans,
+            [input_text[span[0] : span[1]] for span in token_spans],
+            annotations,
+        )
+
+    def _create_annotations(
+        self,
+        input_text,
+        concepts,
+        concept_start,
+        concept_end,
+        match_cursor,
+        stop_count,
+    ):
+        annotations = []
+        for concept in concepts:
+            matched_length =  match_cursor - stop_count
+            # We check that the matched length is equal to the number of tokens in the concept
+            if matched_length == self.concept_length_index[concept]:
+                key_parts = concept.split(&#34;:::&#34;)
+                concept_id = str(key_parts[0])
+                annotation = Annotation(
+                    concept_id = concept_id,
+                    start=concept_start,
+                    end=concept_end,
+                    matched_text = input_text[concept_start:concept_end],
+                    matched_length=matched_length,
+                    label_key=concept,
+                    concept=self.concept_index[concept_id],
+                )
+                annotations.append(annotation)
+
+        return annotations
+
+    def _is_stop_or_termination_token(self, token):
+        return token in self.stop_words or token in self.termination_terms
+
+    def _is_span_termination_token(self, token_span, text):
+        return text[token_span[0]:token_span[1]].strip() in self.termination_terms
+
+class LevenshteinAnnotationFilter(AnnotationFilter):
+    def __init__(self, theta=0.85):
+        super().__init__()
+        self.theta = theta
+
+    def apply_filter(
+        self, annotations: Set[Annotation], text, tokens_spans, tokens
+    ) -&gt; Set[Annotation]:
+        final_annotations = set()
+        for annotation in annotations:
+            if annotation.matched_length &gt; 1:
+                final_annotations.add(annotation)
+            elif (
+                annotation.matched_length == 1
+                and self._max_levenshtein_less_than_theta(
+                    annotation.matched_text, annotation.concept
+                )
+            ):
+                final_annotations.add(annotation)
+
+        return final_annotations
+
+    def _max_levenshtein_less_than_theta(self, mention: str, concept: Concept):
+        distances = [
+            1 - jellyfish.damerau_levenshtein_distance(mention, label)
+            for label in concept.labels
+        ]
+        return numpy.array(distances).max(0) &gt; self.theta
+
+
+# class InterDoubleMetaphoneConceptRecognizer(IntersectionConceptRecognizer):
+#
+#     def __init__(self, dictionary_loader: DictionaryLoader, stop_words_file: str, termination_terms_file: str,
+#                  language=&#34;en&#34;):
+#         super().__init__(dictionary_loader, stop_words_file, termination_terms_file, language,
+#                          [LevenshteinAnnotationFilter()])
+#
+#     def _root_function(self, token) -&gt; str:
+#         return doublemetaphone(token)[0]
+
+
+class IntersStemConceptRecognizer(IntersectionConceptRecognizer):
+    def __init__(
+        self,
+        dictionary_loader: DictionaryLoader,
+        stop_words_file: str,
+        termination_terms_file: str,
+        language=&#34;en&#34;,
+        stemmer: StemmerI = None,
+        filters=None,
+    ):
+        &#34;&#34;&#34;
+        Constructs an InterStemConceptRecognizer instance.
+        Parameters
+        ----------
+            dictionary_loader: DictionaryLoader
+                The dictionary loader that will provide the dictionary contents
+            stop_words_file: str
+                Path to a text file containing a list of stop words (one per line)
+            termination_terms_file: str
+                Path to a text file containing a list of termination terms that stop the production of additional
+                tokens in a matching mention.
+            language: str
+                The language of the text that will processed (affects the choice of tokenner and stemmer).
+                Default: en, Supported en,fr
+            stemmer: StemmerI
+                The stemmer to use, especially if lang is different from &#39;en&#39; or &#39;fr&#39;
+            filters: List[AnnotationFilter]
+            Override default annotation filters
+        &#34;&#34;&#34;
+        super().__init__(
+            dictionary_loader,
+            stop_words_file,
+            termination_terms_file,
+            language,
+            filters=filters
+            if filters is not None
+            else [LevenshteinAnnotationFilter(theta=0.85)],
+        )
+
+        if stemmer:
+            self.stemmer = stemmer
+
+        elif self.language == &#34;en&#34;:
+            self.stemmer = SnowballStemmer(&#34;english&#34;)
+        else:
+            self.stemmer = SnowballStemmer(&#34;french&#34;)
+        self.punctuation_remove = PUNCTUATION_REGEX
+
+    def _root_function(self, token) -&gt; str:
+        return self.stemmer.stem(self.stemmer.stem(token))</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="pyclinrec.recognizer.intersection_recognizers.IntersStemConceptRecognizer"><code class="flex name class">
+<span>class <span class="ident">IntersStemConceptRecognizer</span></span>
+<span>(</span><span>dictionary_loader: <a title="pyclinrec.dictionary.dictionary.DictionaryLoader" href="../dictionary/dictionary.html#pyclinrec.dictionary.dictionary.DictionaryLoader">DictionaryLoader</a>, stop_words_file: str, termination_terms_file: str, language='en', stemmer: nltk.stem.api.StemmerI = None, filters=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper class that provides a standard way to create an ABC using
+inheritance.</p>
+<p>Constructs an InterStemConceptRecognizer instance.
+Parameters</p>
+<hr>
+<pre><code>dictionary_loader: DictionaryLoader
+    The dictionary loader that will provide the dictionary contents
+stop_words_file: str
+    Path to a text file containing a list of stop words (one per line)
+termination_terms_file: str
+    Path to a text file containing a list of termination terms that stop the production of additional
+    tokens in a matching mention.
+language: str
+    The language of the text that will processed (affects the choice of tokenner and stemmer).
+    Default: en, Supported en,fr
+stemmer: StemmerI
+    The stemmer to use, especially if lang is different from 'en' or 'fr'
+filters: List[AnnotationFilter]
+Override default annotation filters
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class IntersStemConceptRecognizer(IntersectionConceptRecognizer):
+    def __init__(
+        self,
+        dictionary_loader: DictionaryLoader,
+        stop_words_file: str,
+        termination_terms_file: str,
+        language=&#34;en&#34;,
+        stemmer: StemmerI = None,
+        filters=None,
+    ):
+        &#34;&#34;&#34;
+        Constructs an InterStemConceptRecognizer instance.
+        Parameters
+        ----------
+            dictionary_loader: DictionaryLoader
+                The dictionary loader that will provide the dictionary contents
+            stop_words_file: str
+                Path to a text file containing a list of stop words (one per line)
+            termination_terms_file: str
+                Path to a text file containing a list of termination terms that stop the production of additional
+                tokens in a matching mention.
+            language: str
+                The language of the text that will processed (affects the choice of tokenner and stemmer).
+                Default: en, Supported en,fr
+            stemmer: StemmerI
+                The stemmer to use, especially if lang is different from &#39;en&#39; or &#39;fr&#39;
+            filters: List[AnnotationFilter]
+            Override default annotation filters
+        &#34;&#34;&#34;
+        super().__init__(
+            dictionary_loader,
+            stop_words_file,
+            termination_terms_file,
+            language,
+            filters=filters
+            if filters is not None
+            else [LevenshteinAnnotationFilter(theta=0.85)],
+        )
+
+        if stemmer:
+            self.stemmer = stemmer
+
+        elif self.language == &#34;en&#34;:
+            self.stemmer = SnowballStemmer(&#34;english&#34;)
+        else:
+            self.stemmer = SnowballStemmer(&#34;french&#34;)
+        self.punctuation_remove = PUNCTUATION_REGEX
+
+    def _root_function(self, token) -&gt; str:
+        return self.stemmer.stem(self.stemmer.stem(token))</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pyclinrec.recognizer.intersection_recognizers.IntersectionConceptRecognizer" href="#pyclinrec.recognizer.intersection_recognizers.IntersectionConceptRecognizer">IntersectionConceptRecognizer</a></li>
+<li><a title="pyclinrec.recognizer.recognizer.ConceptRecognizer" href="recognizer.html#pyclinrec.recognizer.recognizer.ConceptRecognizer">ConceptRecognizer</a></li>
+<li>abc.ABC</li>
+</ul>
+</dd>
+<dt id="pyclinrec.recognizer.intersection_recognizers.IntersectionConceptRecognizer"><code class="flex name class">
+<span>class <span class="ident">IntersectionConceptRecognizer</span></span>
+<span>(</span><span>dictionary_loader: <a title="pyclinrec.dictionary.dictionary.DictionaryLoader" href="../dictionary/dictionary.html#pyclinrec.dictionary.dictionary.DictionaryLoader">DictionaryLoader</a>, stop_words_file: str, termination_terms_file: str, language='en', filters: List[<a title="pyclinrec.recognizer.recognizer.AnnotationFilter" href="recognizer.html#pyclinrec.recognizer.recognizer.AnnotationFilter">AnnotationFilter</a>] = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper class that provides a standard way to create an ABC using
+inheritance.</p>
+<h2 id="parameters">Parameters</h2>
+<pre><code>dictionary_loader: DictionaryLoader
+    The dictionary loader that will provide the dictionary contents
+stop_words_file: str
+    Path to a text file containing a list of stop words (one per line)
+termination_terms_file: str
+    Path to a text file containing a list of termination terms that stop the production of additional
+    tokens in a matching mention.
+language: str
+    The language of the text that will processed (affects the choice of tokenizer and stemmer).
+filters: List[AnnotationFilter]
+    A list of filters to apply post recognition
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
+    def __init__(
+        self,
+        dictionary_loader: DictionaryLoader,
+        stop_words_file: str,
+        termination_terms_file: str,
+        language=&#34;en&#34;,
+        filters: List[AnnotationFilter] = None,
+    ):
+        &#34;&#34;&#34;
+        Parameters
+        ----------
+            dictionary_loader: DictionaryLoader
+                The dictionary loader that will provide the dictionary contents
+            stop_words_file: str
+                Path to a text file containing a list of stop words (one per line)
+            termination_terms_file: str
+                Path to a text file containing a list of termination terms that stop the production of additional
+                tokens in a matching mention.
+            language: str
+                The language of the text that will processed (affects the choice of tokenizer and stemmer).
+            filters: List[AnnotationFilter]
+                A list of filters to apply post recognition
+        &#34;&#34;&#34;
+        
+        super().__init__(dictionary_loader, language=language, filters=filters)
+        self.stop_words = self._load_word_list(stop_words_file)
+        self.termination_terms = self._load_word_list(termination_terms_file)
+        self.unigram_root_index = {}
+        self.concept_length_index = {}
+        self.unigram_concept_count_histogram = {}
+
+        if language == &#34;en&#34;:
+            import en_core_web_md
+
+            self.spacy = en_core_web_md.load()
+        elif language == &#34;fr&#34;:
+            import fr_core_news_md
+
+            self.spacy = fr_core_news_md.load()
+        else:
+            raise ValueError(f&#34;Unsupported language: {language}&#34;)
+
+    @abstractmethod
+    def _root_function(self, token) -&gt; str:
+        pass
+
+    def _concept_from_root(self, root) -&gt; Set[Concept]:
+        if root not in self.unigram_root_index:
+            return set()
+        else:
+            return self.unigram_root_index[root]
+
+    def _embed_batch_concept_labels(self, concept_id, labels):
+        for label_index, label in enumerate(labels):
+            normalized = PUNCTUATION_REGEX.sub(&#34; &#34;, label).lower()
+            # We tokenize the label
+            tokens, _ = span_tokenize(self.spacy, normalized)
+
+            concept_token_count = 0
+            # For each token
+            key = f&#34;{str(concept_id)}:::{str(label_index)}&#34;
+            for token in tokens:
+                # We skip words that belong to the stop list and words that contain non alphanumerical characters
+                if token not in self.stop_words:
+                    token_phone = self._root_function(token)
+
+                    # we create the dictionary entry if it did not exist before
+                    if token_phone not in self.unigram_root_index:
+                        self.unigram_root_index[token_phone] = set()
+                    # if it already existed we add the concept id to the corresponding set
+                    self.unigram_root_index[token_phone].add(key)
+                    count_key = (key, token_phone)
+                    self.unigram_concept_count_histogram[count_key] = (
+                        1
+                        if count_key not in self.unigram_concept_count_histogram
+                        else self.unigram_concept_count_histogram[count_key] + 1
+                    )
+                    concept_token_count += 1
+            self.concept_length_index[key] = concept_token_count
+
+    def _match_subsequence(
+        self,
+        input_text,
+        token_spans,
+        current_span,
+        current_token_span_index,
+        token_root,
+        concepts,
+    ) -&gt; set[str]:
+        concept_start = current_span[0]
+        # For now we have matched a single terms, so currently the end position will be that of the current token
+        concept_end = current_span[1]
+        match_cursor = 1
+        stop_count = 0
+        while (
+            current_token_span_index + match_cursor &lt; len(token_spans)
+            and not self._is_span_termination_token(token_spans[current_token_span_index + match_cursor], input_text)
+        ):
+            # We get the next token and position span
+            next_span = token_spans[current_token_span_index + match_cursor]
+            next_token = input_text[next_span[0] : next_span[1]]
+
+            #  if the token is in the termination list the matching process ends here
+
+            if next_token not in self.stop_words:
+                next_token_root = self._root_function(next_token)
+
+                # We try to find matching concepts and compute the intersection with previously identified concepts
+                next_concepts = self._concept_from_root(next_token_root) &amp; concepts
+
+                filtered_next_concepts = self._filter_next_concepts(
+                    token_root, next_token_root, next_concepts
+                )
+                if len(filtered_next_concepts) == 0:
+                    break
+                concept_end = next_span[1]
+                concepts = (
+                    next_concepts
+                    if len(filtered_next_concepts)
+                    else filtered_next_concepts
+                )
+
+            else:
+                stop_count += 1
+            match_cursor += 1
+        return concept_start, concept_end, match_cursor, stop_count, concepts
+
+    def _filter_next_concepts(self, token_root, next_token_root, next_concepts):
+        return {
+            concept_key
+            for concept_key in next_concepts
+            if next_token_root != token_root
+            or self.unigram_concept_count_histogram[(concept_key, token_root)] &gt;= 2
+        }
+
+    def _match_mentions(
+        self, input_text
+    ) -&gt; Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
+        annotations = []
+
+        # We split the text into token spans (begin and end position from the start of the text)
+        tokens, token_spans = span_tokenize(self.spacy, input_text)
+
+        # we iterate over tokens one by one until we reach the end of the text
+        current_token_span_index = 0
+        while current_token_span_index &lt; len(token_spans):
+            # we get the current token span
+            current_span = token_spans[current_token_span_index]
+
+            token_text = input_text[current_span[0] : current_span[1]]
+
+            # if the word is a stop list term or a termination term we skip it
+            if not self._is_stop_or_termination_token(token_text):
+                # We get the concept ids matching the root of the current token
+                token_root = self._root_function(token_text)
+                concepts = self._concept_from_root(token_root)
+
+                (
+                    concept_start,
+                    concept_end,
+                    match_cursor,
+                    stop_count,
+                    concepts,
+                ) = self._match_subsequence(
+                    input_text,
+                    token_spans,
+                    current_span,
+                    current_token_span_index,
+                    token_root,
+                    concepts,
+                )
+
+                # Once we get out of the loop we reconstruct the matches from the concepts remaining in the set
+                # after successive intersections, if concepts is empty there was no match and so
+                # Tokens.conceptsToAnnotationTokens will return an empty list otherwise we get a list of
+                # AnnotationToken objects instances that we add to the list of identified concepts
+
+                annotations.extend(
+                    self._create_annotations(
+                        input_text,
+                        concepts,
+                        concept_start,
+                        concept_end,
+                        match_cursor,
+                        stop_count,
+                    )
+                )
+
+            current_token_span_index += 1
+
+        return (
+            token_spans,
+            [input_text[span[0] : span[1]] for span in token_spans],
+            annotations,
+        )
+
+    def _create_annotations(
+        self,
+        input_text,
+        concepts,
+        concept_start,
+        concept_end,
+        match_cursor,
+        stop_count,
+    ):
+        annotations = []
+        for concept in concepts:
+            matched_length =  match_cursor - stop_count
+            # We check that the matched length is equal to the number of tokens in the concept
+            if matched_length == self.concept_length_index[concept]:
+                key_parts = concept.split(&#34;:::&#34;)
+                concept_id = str(key_parts[0])
+                annotation = Annotation(
+                    concept_id = concept_id,
+                    start=concept_start,
+                    end=concept_end,
+                    matched_text = input_text[concept_start:concept_end],
+                    matched_length=matched_length,
+                    label_key=concept,
+                    concept=self.concept_index[concept_id],
+                )
+                annotations.append(annotation)
+
+        return annotations
+
+    def _is_stop_or_termination_token(self, token):
+        return token in self.stop_words or token in self.termination_terms
+
+    def _is_span_termination_token(self, token_span, text):
+        return text[token_span[0]:token_span[1]].strip() in self.termination_terms</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pyclinrec.recognizer.recognizer.ConceptRecognizer" href="recognizer.html#pyclinrec.recognizer.recognizer.ConceptRecognizer">ConceptRecognizer</a></li>
+<li>abc.ABC</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="pyclinrec.recognizer.deep_recognizers.IntersEmbeddingConceptRecognizer" href="deep_recognizers.html#pyclinrec.recognizer.deep_recognizers.IntersEmbeddingConceptRecognizer">IntersEmbeddingConceptRecognizer</a></li>
+<li><a title="pyclinrec.recognizer.intersection_recognizers.IntersStemConceptRecognizer" href="#pyclinrec.recognizer.intersection_recognizers.IntersStemConceptRecognizer">IntersStemConceptRecognizer</a></li>
+</ul>
+</dd>
+<dt id="pyclinrec.recognizer.intersection_recognizers.LevenshteinAnnotationFilter"><code class="flex name class">
+<span>class <span class="ident">LevenshteinAnnotationFilter</span></span>
+<span>(</span><span>theta=0.85)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper class that provides a standard way to create an ABC using
+inheritance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class LevenshteinAnnotationFilter(AnnotationFilter):
+    def __init__(self, theta=0.85):
+        super().__init__()
+        self.theta = theta
+
+    def apply_filter(
+        self, annotations: Set[Annotation], text, tokens_spans, tokens
+    ) -&gt; Set[Annotation]:
+        final_annotations = set()
+        for annotation in annotations:
+            if annotation.matched_length &gt; 1:
+                final_annotations.add(annotation)
+            elif (
+                annotation.matched_length == 1
+                and self._max_levenshtein_less_than_theta(
+                    annotation.matched_text, annotation.concept
+                )
+            ):
+                final_annotations.add(annotation)
+
+        return final_annotations
+
+    def _max_levenshtein_less_than_theta(self, mention: str, concept: Concept):
+        distances = [
+            1 - jellyfish.damerau_levenshtein_distance(mention, label)
+            for label in concept.labels
+        ]
+        return numpy.array(distances).max(0) &gt; self.theta</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="pyclinrec.recognizer.recognizer.AnnotationFilter" href="recognizer.html#pyclinrec.recognizer.recognizer.AnnotationFilter">AnnotationFilter</a></li>
+<li>abc.ABC</li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="pyclinrec.recognizer.recognizer.AnnotationFilter" href="recognizer.html#pyclinrec.recognizer.recognizer.AnnotationFilter">AnnotationFilter</a></b></code>:
+<ul class="hlist">
+<li><code><a title="pyclinrec.recognizer.recognizer.AnnotationFilter.apply_filter" href="recognizer.html#pyclinrec.recognizer.recognizer.AnnotationFilter.apply_filter">apply_filter</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="pyclinrec.recognizer" href="index.html">pyclinrec.recognizer</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="pyclinrec.recognizer.intersection_recognizers.IntersStemConceptRecognizer" href="#pyclinrec.recognizer.intersection_recognizers.IntersStemConceptRecognizer">IntersStemConceptRecognizer</a></code></h4>
+</li>
+<li>
+<h4><code><a title="pyclinrec.recognizer.intersection_recognizers.IntersectionConceptRecognizer" href="#pyclinrec.recognizer.intersection_recognizers.IntersectionConceptRecognizer">IntersectionConceptRecognizer</a></code></h4>
+</li>
+<li>
+<h4><code><a title="pyclinrec.recognizer.intersection_recognizers.LevenshteinAnnotationFilter" href="#pyclinrec.recognizer.intersection_recognizers.LevenshteinAnnotationFilter">LevenshteinAnnotationFilter</a></code></h4>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

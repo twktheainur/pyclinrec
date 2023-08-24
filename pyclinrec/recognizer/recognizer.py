@@ -10,12 +10,9 @@ class Concept:
                  definition: str = ""):
         self.label_embeddings = label_embeddings
         if label_embeddings is None:
-            self.label_embeddings = dict()
+            self.label_embeddings = {}
         self.uri = uri
-        if labels is not None:
-            self.labels = labels
-        else:
-            self.labels = set()
+        self.labels = labels if labels is not None else set()
         self.definition = definition
 
     def add_label(self, label, label_embedding: torch.tensor = None):
@@ -31,14 +28,30 @@ class Concept:
 
 
 class Annotation:
-    def __init__(self, concept_id, start, end, matched_text, matched_length, label_key: str = None,
-                 concept: Concept = None):
+    def __init__(self, concept_id, start, end, matched_text, matched_length, label_key: str = None, concept: Concept = None):
+        """
+        An annotation is a mention of a concept in a text. It is defined by a concept id, a start and end position in the text, 
+        the matched text and its length.
+        
+        Parameters
+        ==========
+            concept_id: str
+                The concept id of the annotation
+            start: int
+                The start position of the annotation in the text
+            end: int
+                The end position of the annotation in the text
+            matched_text: str
+                The matched text
+            matched_length: int
+                The length of the matched text in number of tokens
+            label_key: str
+                The label key to use for the annotation, if None, the concept id is used
+            concept: Concept
+                The concept object corresponding to the annotation
+        """
         self.concept_id = concept_id
-        if label_key:
-            self.label_key = label_key
-        else:
-            self.label_key = concept_id
-
+        self.label_key = label_key or concept_id
         self.start = start
         self.end = end
         self.matched_text = matched_text
@@ -48,8 +61,7 @@ class Annotation:
         self.concept = concept
 
     def __str__(self) -> str:
-        return "Annotation ({})[{}-{} M{}] - {}".format(self.matched_text, self.start, self.end, self.matched_length,
-                                                        self.concept_id)
+        return f"Annotation ({self.matched_text})[{self.start}-{self.end} M{self.matched_length}] - {self.concept_id}"
 
     def __eq__(self, o) -> bool:
         if isinstance(o, Annotation):
@@ -96,21 +108,21 @@ class AnnotationFilter(ABC):
 
 
 class ConceptRecognizer(ABC):
-    def __init__(self, dictionary_loader, language="en",
-                 filters: List[AnnotationFilter] = None):
+    def __init__(self, dictionary_loader, language="en",filters: List[AnnotationFilter] = None):
         """
         This is the constructor of an Abstract class and should never be called directly, see subclasses.
-             Parameters
-             ----------
-                 dictionary_loader: DictionaryLoader
-                     The dictionary loader that will provide the dictionary contents
-                 language: str
-                     The language of the text that will processed (affects the choice of tokenizer and stemmer).
-                 filters: List[AnnotationFilter]
-                     A list of filters to apply post recognition
-             """
+        
+        Parameters
+        ----------
+            dictionary_loader: DictionaryLoader
+                The dictionary loader that will provide the dictionary contents
+            language: str
+                The language of the text that will processed (affects the choice of tokenizer and stemmer).
+            filters: List[AnnotationFilter]
+                A list of filters to apply post recognition
+        """
         self.dictionary_loader = dictionary_loader
-        self.concept_index = dict()  # type: Dict[str,Concept]
+        self.concept_index = {}  # type: Dict[str,Concept]
         self.language = language
         if filters is None:
             filters = []
@@ -123,7 +135,7 @@ class ConceptRecognizer(ABC):
         return words
 
     @abstractmethod
-    def _load_concept_labels(self, concept_id, labels):
+    def _embed_batch_concept_labels(self, concept_id, labels):
         pass
 
     def initialize(self):
@@ -142,10 +154,10 @@ class ConceptRecognizer(ABC):
                 labels.extend(entry.synonyms)
             concept = Concept(concept_id, set(labels))
             self.concept_index[concept_id] = concept
-            self._load_concept_labels(concept_id, labels)
+            self._embed_batch_concept_labels(concept_id, labels)
 
     @abstractmethod
-    def match_mentions(self, input_text) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
+    def _match_mentions(self, input_text) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
         """Match candidate mentions of entities from the dictionary in the text
         Parameters
         ----------
@@ -163,7 +175,7 @@ class ConceptRecognizer(ABC):
 
         raise NotImplementedError("This abstract method must be overridden")
 
-    def annotate(self, input_text) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
+    def __call__(self, input_text) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
         """Matches candidate mentions of entities from the dictionary in the text and
         applies pre and post-processing filters
         Parameters
@@ -179,7 +191,7 @@ class ConceptRecognizer(ABC):
             annotations: Set[Annotation]
                 Mention annotations, see @Annotation
         """
-        token_spans, tokens, annotations = self.match_mentions(input_text)
+        token_spans, tokens, annotations = self._match_mentions(input_text)
         for annotation_filter in self.filters:
             annotations = annotation_filter.apply_filter(annotations, input_text, token_spans, tokens)
         return token_spans, tokens, annotations

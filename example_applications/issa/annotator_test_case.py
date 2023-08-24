@@ -14,10 +14,10 @@ from pyclinrec.dictionary import generate_dictionary_from_skos_sparql
 
 class AgrovocDictionaryGenerator:
     def __init__(self,
-                 endpoint="https://data-issa.cirad.fr/sparql",
-                 graph="http://agrovoc.fao.org/graph",
-                 language="en",
-                 output_dir='.'):
+                endpoint="https://data-issa.cirad.fr/sparql",
+                graph="http://agrovoc.fao.org/graph",
+                language="en",
+                output_dir='.'):
         self.endpoint = endpoint
         self.graph = graph
         self.language = language
@@ -29,9 +29,9 @@ class AgrovocDictionaryGenerator:
             # generate dict tsv file
             print('generating dictionary..')
             generate_dictionary_from_skos_sparql(endpoint, self.output,
-                                                 skos_xl_labels=True,
-                                                 lang=language,
-                                                 from_statement=graph)
+                                                skos_xl_labels=True,
+                                                lang=language,
+                                                from_statement=graph)
 
 
 dict_gen_en = AgrovocDictionaryGenerator(output_dir='./vocab', language="en")
@@ -47,16 +47,14 @@ class AgrovocAnnotator:
     def __init__(self, dictionary_file, language="en"):
         dictionary_loader = MgrepDictionaryLoader(dictionary_file)
 
-        self.concept_recognizer = IntersStemConceptRecognizer(dictionary_loader,
-                                                              os.path.join(pyclinrec_path[0],
-                                                                           f"stopwords{language}.txt"),
-                                                              os.path.join(pyclinrec_path[0],
-                                                                           f"termination_terms{language}.txt"))
+        self.concept_recognizer = IntersStemConceptRecognizer(dictionary_loader, os.path.join(pyclinrec_path[0], f"stopwords{language}.txt"),
+                                                            os.path.join(pyclinrec_path[0],f"termination_terms{language}.txt")
+                                                            )
 
         self.concept_recognizer.initialize()
 
     def annotate(self, text):
-        return self.concept_recognizer.annotate(text)
+        return self.concept_recognizer(text)
 
 
 if __name__ == "__main__":
