@@ -7,7 +7,7 @@ from SPARQLWrapper import JSON
 class SparQLOffsetFetcher:
 
     def __init__(self, sparql_wrapper, page_size, where_body, select_columns, from_statement="", prefixes="", timeout=0,
-                 redis=None):
+                redis=None):
         self.sparql_wrapper = sparql_wrapper
         self.sparql_wrapper.setTimeout(timeout)
         self.page_size = page_size
@@ -22,25 +22,25 @@ class SparQLOffsetFetcher:
         self.__get_count__()
 
     def __get_count__(self):
-        if self.count == -1:
-            if len(self.from_statement) == 0:
-                query = f"""define sql:big-data-const 0
-                 {self.prefixes}
-                 SELECT count(distinct *) as ?count WHERE {{
-                    {self.where_body}
+        if self.count != -1:
+            return self.count
+        if len(self.from_statement) == 0:
+            query = f"""define sql:big-data-const 0
+                {self.prefixes}
+                SELECT count(distinct *) as ?count WHERE {{
+                {self.where_body}
                 }}
                 """
-            else:
-                query = f"""define sql:big-data-const 0\n {self.prefixes}\n SELECT (count(distinct *) as ?count) \nFROM <{self.from_statement}> WHERE {{
+        else:
+            query = f"""define sql:big-data-const 0\n {self.prefixes}\n SELECT (count(distinct *) as ?count) \nFROM <{self.from_statement}> WHERE {{
                         {self.where_body}
                     }}
                 """
-                print(query)
-            result = self._fetch_from_cache_or_query(query)
-            count = int(result['results']['bindings'][0]['count']["value"])
-            self.count = count
-            return count
-        return self.count
+            print(query)
+        result = self._fetch_from_cache_or_query(query)
+        count = int(result['results']['bindings'][0]['count']["value"])
+        self.count = count
+        return count
 
     def next_page(self):
         if self.current_offset < self.count:
@@ -60,8 +60,8 @@ class SparQLOffsetFetcher:
         return None
 
     def fetch_all(self):
-        result = list()
-        page = list()
+        result = []
+        page = []
         while page is not None:
             page = self.next_page()
             if page is not None:
