@@ -108,16 +108,19 @@ class IntersEmbeddingConceptRecognizer(IntersectionConceptRecognizer):
         att_masks = inputs['attention_mask']
         last_tokens = [(att_mask == 0).nonzero()[0].item() for att_mask in att_masks]
         with torch.no_grad():
-            model_output = self.model(**inputs).detach().cpu()
+            model_output = self.model(**inputs)
             per_concept_label_indexes = {}
-            for vector_index in range(model_output.last_hidden_state.shape[0]):
-                    
-                token_vectors = model_output['last_hidden_state'][vector_index, 0:last_tokens[vector_index] - 1, :]
+            
+            last_hidden_state = model_output['last_hidden_state'].detach().cpu()
+
+            for vector_index in range(last_hidden_state.shape[0]):
+            
+                token_vectors = last_hidden_state[vector_index, 0:last_tokens[vector_index] - 1, :]
                 concept_id = concept_ids[vector_index]
                 if concept_id not in self.concept_index:
                     self.concept_index[concept_id] = Concept(concept_id)
                 concept = self.concept_index[concept_id]
-                concept.add_label(labels[vector_index], label_embedding=model_output['pooler_output'])
+                concept.add_label(labels[vector_index], label_embedding=model_output['pooler_output'].detach().cpu())
                 concept_token_count = 0
                 if concept_id not in per_concept_label_indexes:
                     per_concept_label_indexes[concept_id] = 1
