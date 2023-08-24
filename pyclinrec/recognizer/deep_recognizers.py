@@ -38,15 +38,27 @@ class IntersEmbeddingConceptRecognizer(IntersectionConceptRecognizer):
         self.batch_size = batch_size
         self.device = device
         
-        nf4_config = BitsAndBytesConfig(
-            load_in_4bit=False,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_compute_dtype=torch.bfloat16
-        )
+        if device == "cpu":
+            nf4_config = BitsAndBytesConfig(
+                load_in_4bit=False,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_compute_dtype=torch.bfloat16
+            )
+        else:
+            nf4_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype=torch.bfloat16
+            )
         
         self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
-        self.model = AutoModel.from_pretrained(model_name_or_path, quantization_config=nf4_config).to(device)
+        if device == "cpu":
+            self.model = AutoModel.from_pretrained(model_name_or_path, quantization_config=nf4_config)
+        else: 
+            self.model = AutoModel.from_pretrained(model_name_or_path, quantization_config=nf4_config, trust_remote_code=True, device_map={"":0})
+            
         self.unk_token_id = self.tokenizer.unk_token_id
         self.cls_token_id = self.tokenizer.cls_token_id
         self.pad_token_id = self.tokenizer.pad_token_id
