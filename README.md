@@ -1,4 +1,4 @@
-# Python Concept Recognition Library
+# Python Concept Recognition and Entity Linking Library
 
 ![PyClinRec Logo](https://raw.githubusercontent.com/twktheainur/pyclinrec/master/resources/pyclinrec_logo.png)
 
