@@ -129,9 +129,9 @@ class IntersEmbeddingConceptRecognizer(IntersectionConceptRecognizer):
                 key = f"{str(concept_id)}:::{str(per_concept_label_indexes[concept_id])}"
                 last_token_index = last_tokens[vector_index] - 1
                 if len(tokens.shape) > 1:
-                    tokens = tokens[vector_index,:last_token_index]
+                    tokens = tokens[vector_index,:last_token_index].detach().cpu()
                 else:
-                    tokens = tokens[:last_token_index]
+                    tokens = tokens[:last_token_index].detach().cpu()
                 for token in tokens:
                     token = token.item()
                     # We skip words that belong to the stop list and words that contain non alphanumerical characters
