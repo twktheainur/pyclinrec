@@ -32,10 +32,11 @@ class _LabelDataset(Dataset):
 class IntersEmbeddingConceptRecognizer(IntersectionConceptRecognizer):
 
     def __init__(self, dictionary_loader: DictionaryLoader, stop_words_file: str, termination_terms_file: str, language: str,
-                model_name_or_path: str, batch_size=32):
+                model_name_or_path: str, batch_size=32, device="cpu"):
         super().__init__(dictionary_loader, stop_words_file, termination_terms_file, language)
         self.concept_token_vector_index = {}
         self.batch_size = batch_size
+        self.device = device
         
         nf4_config = BitsAndBytesConfig(
             load_in_4bit=False,
@@ -45,7 +46,7 @@ class IntersEmbeddingConceptRecognizer(IntersectionConceptRecognizer):
         )
         
         self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
-        self.model = AutoModel.from_pretrained(model_name_or_path, quantization_config=nf4_config)
+        self.model = AutoModel.from_pretrained(model_name_or_path, quantization_config=nf4_config).to(device)
         self.unk_token_id = self.tokenizer.unk_token_id
         self.cls_token_id = self.tokenizer.cls_token_id
         self.pad_token_id = self.tokenizer.pad_token_id
@@ -90,12 +91,12 @@ class IntersEmbeddingConceptRecognizer(IntersectionConceptRecognizer):
 
     def _embed_batch_concept_labels(self, concept_ids, labels):
 
-        inputs = self.tokenizer(labels, max_length=512, padding='max_length', return_attention_mask=True, return_tensors='pt')
+        inputs = self.tokenizer(labels, max_length=512, padding='max_length', return_attention_mask=True, return_tensors='pt').to(self.device)
         tokens = inputs['input_ids']
         att_masks = inputs['attention_mask']
         last_tokens = [(att_mask == 0).nonzero()[0].item() for att_mask in att_masks]
         with torch.no_grad():
-            model_output = self.model(**inputs)
+            model_output = self.model(**inputs).detach().cpu()
             per_concept_label_indexes = {}
             for vector_index in range(model_output.last_hidden_state.shape[0]):
                     
