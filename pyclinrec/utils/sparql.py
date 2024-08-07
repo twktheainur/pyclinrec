@@ -5,9 +5,17 @@ from SPARQLWrapper import JSON
 
 
 class SparQLOffsetFetcher:
-
-    def __init__(self, sparql_wrapper, page_size, where_body, select_columns, from_statement="", prefixes="", timeout=0,
-                redis=None):
+    def __init__(
+        self,
+        sparql_wrapper,
+        page_size,
+        where_body,
+        select_columns,
+        from_statement="",
+        prefixes="",
+        timeout=0,
+        redis=None,
+    ):
         self.sparql_wrapper = sparql_wrapper
         self.sparql_wrapper.setTimeout(timeout)
         self.page_size = page_size
@@ -38,7 +46,7 @@ class SparQLOffsetFetcher:
                 """
             print(query)
         result = self._fetch_from_cache_or_query(query)
-        count = int(result['results']['bindings'][0]['count']["value"])
+        count = int(result["results"]["bindings"][0]["count"]["value"])
         self.count = count
         return count
 
@@ -56,7 +64,7 @@ class SparQLOffsetFetcher:
                                     """
             result = self._fetch_from_cache_or_query(query)
             self.current_offset += self.page_size
-            return result['results']['bindings']
+            return result["results"]["bindings"]
         return None
 
     def fetch_all(self):
@@ -87,5 +95,5 @@ class SparQLOffsetFetcher:
                 result = ""
             if self.redis is not None:
                 self.redis.set(cache_key, result)
-        strres = str(result, 'utf-8')
+        strres = str(result, "utf-8")
         return json.loads(strres)

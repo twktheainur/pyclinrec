@@ -6,25 +6,31 @@ import pandas
 from tqdm import tqdm
 
 
-
 logger = getLogger("Dictionaries")
 
 
 class DictionaryEntry:
-    def __init__(self, id: str, label: str, definition: str = None, source: str = None, language: str = None, 
-                mappings: List[str] = None, 
-                cuis: List[str] = None, 
-                tuis: List[str] = None, 
-                synonyms: List[str] = None):
+    def __init__(
+        self,
+        id: str,
+        label: str,
+        definition: str = None,
+        source: str = None,
+        language: str = None,
+        mappings: List[str] = None,
+        cuis: List[str] = None,
+        tuis: List[str] = None,
+        synonyms: List[str] = None,
+    ):
         """
-            Class to represent a dictionary entry.
+        Class to represent a dictionary entry.
 
-            Parameters
-            ----------
-            id : int
-                Identifier of the dictionary entry
-            label : str
-                Label for the concept
+        Parameters
+        ----------
+        id : int
+            Identifier of the dictionary entry
+        label : str
+            Label for the concept
 
         """
         self.id = id
@@ -78,9 +84,10 @@ class DictionaryLoader(ABC):
 
 
 class MgrepDictionaryLoader(DictionaryLoader):
-
     def load(self):
-        data = pandas.read_csv(self.dictionary_file, delimiter="\t", encoding="utf8", dtype=str)
+        data = pandas.read_csv(
+            self.dictionary_file, delimiter="\t", encoding="utf8", dtype=str
+        )
         for index, row in tqdm(data.iterrows()):
             cid = row[0]
             if cid in self.dictionary_index.keys():
@@ -106,7 +113,6 @@ class MgrepDictionaryLoader(DictionaryLoader):
 
 
 class StringDictionaryLoader(MgrepDictionaryLoader):
-
     def __init__(self, string_entries):
         super().__init__(None)
         self.dictionary_string_entries = string_entries
@@ -127,7 +133,9 @@ class StringDictionaryLoader(MgrepDictionaryLoader):
                 self.reverse_index[string_entry[1]] = ident
 
 
-def generate_brat_normalization_database(string_entries, target_file="brat_norm_db.txt", remove_uris=True):
+def generate_brat_normalization_database(
+    string_entries, target_file="brat_norm_db.txt", remove_uris=True
+):
     concept_dictionary = {}
     for item in string_entries:
         key = item[0].split("/")[-1].split("_")[1] if remove_uris else item[0]
@@ -139,15 +147,20 @@ def generate_brat_normalization_database(string_entries, target_file="brat_norm_
             entry = f"{key}"
             for value in values:
                 entry += f"\tname:Name:{value}"
-            entry += '\n'
+            entry += "\n"
             target_handler.write(entry)
 
 
-def generate_dictionary_from_skos_file(self, graph = None, thesaurus_path=None,
-                                        save_file="agrovoc_dictionary.tsv",
-                                        skos_xl_labels=True,
-                                        lang="fr"):
+def generate_dictionary_from_skos_file(
+    self,
+    graph=None,
+    thesaurus_path=None,
+    save_file="agrovoc_dictionary.tsv",
+    skos_xl_labels=True,
+    lang="fr",
+):
     from rdflib import Namespace, Graph
+
     self.graph = Graph() if graph is None else graph
     logger.info(f"Loading thesaurus... [{thesaurus_path}]")
 
@@ -161,8 +174,13 @@ def generate_dictionary_from_skos_file(self, graph = None, thesaurus_path=None,
             FILTER(lang(?lf)='{lang}')
         }}
         """
-        pref_labels = self.graph.query(query, initNs={'skos': Namespace("http://www.w3.org/2004/02/skos/core#"),
-                                                    'skosxl': Namespace("http://www.w3.org/2008/05/skos-xl#")})
+        pref_labels = self.graph.query(
+            query,
+            initNs={
+                "skos": Namespace("http://www.w3.org/2004/02/skos/core#"),
+                "skosxl": Namespace("http://www.w3.org/2008/05/skos-xl#"),
+            },
+        )
     else:
         query = f"""SELECT ?x ?lf WHERE {{
             ?x a skos:Concept;
@@ -170,7 +188,9 @@ def generate_dictionary_from_skos_file(self, graph = None, thesaurus_path=None,
             FILTER(lang(?lf)='{lang}')
         }}
         """
-        pref_labels = self.graph.query(query, initNs=dict(skos=Namespace("http://www.w3.org/2004/02/skos/core#")))
+        pref_labels = self.graph.query(
+            query, initNs=dict(skos=Namespace("http://www.w3.org/2004/02/skos/core#"))
+        )
 
     string_entries = [(str(result[0]), str(result[1])) for result in pref_labels]
     if skos_xl_labels:
@@ -181,8 +201,13 @@ def generate_dictionary_from_skos_file(self, graph = None, thesaurus_path=None,
             FILTER(lang(?lf)='{lang}')
         }}
     """
-        alt_labels = self.graph.query(query, initNs=dict(skos=Namespace("http://www.w3.org/2004/02/skos/core#"),
-                                                        skosxl=Namespace("http://www.w3.org/2008/05/skos-xl#")))
+        alt_labels = self.graph.query(
+            query,
+            initNs=dict(
+                skos=Namespace("http://www.w3.org/2004/02/skos/core#"),
+                skosxl=Namespace("http://www.w3.org/2008/05/skos-xl#"),
+            ),
+        )
     else:
         query = f"""SELECT ?x ?lf WHERE {{
         ?x a skos:Concept;
@@ -190,55 +215,71 @@ def generate_dictionary_from_skos_file(self, graph = None, thesaurus_path=None,
         FILTER(lang(?lf)='{lang}')
     }}
     """
-        alt_labels = self.graph.query(query, initNs=dict(skos=Namespace("http://www.w3.org/2004/02/skos/core#")))
+        alt_labels = self.graph.query(
+            query, initNs=dict(skos=Namespace("http://www.w3.org/2004/02/skos/core#"))
+        )
 
-    string_entries.extend(
-        (str(result[0]), str(result[1])) for result in alt_labels
-    )
+    string_entries.extend((str(result[0]), str(result[1])) for result in alt_labels)
     generate_brat_normalization_database(string_entries, remove_uris=True)
     dictionary_loader = StringDictionaryLoader(string_entries)
     dictionary_loader.load()
     dictionary_loader.save(save_file)
 
 
-def generate_dictionary_from_skos_sparql(endpoint,
-                                        save_file="agrovoc_dictionary.tsv",
-                                        skos_xl_labels=True,
-                                        lang="fr", from_statement=""):
+def generate_dictionary_from_skos_sparql(
+    endpoint,
+    save_file="agrovoc_dictionary.tsv",
+    skos_xl_labels=True,
+    lang="fr",
+    from_statement="",
+):
     from pyclinrec.utils.sparql import SparQLOffsetFetcher
     from SPARQLWrapper import SPARQLWrapper
+
     sparql = SPARQLWrapper(endpoint)
 
     if skos_xl_labels:
-        fetcher = SparQLOffsetFetcher(sparql, 9000,
-                                    where_body=f"?x a skos:Concept;\nskosxl:prefLabel ?l.\n ?l skosxl:literalForm ?lf.\nFILTER(lang(?lf)='{lang}')",
-                                    select_columns="?x ?lf",
-                                    prefixes="prefix skos: <http://www.w3.org/2004/02/skos/core#>\n"
-                                            "prefix skosxl: <http://www.w3.org/2008/05/skos-xl#>",
-                                    from_statement=from_statement)
+        fetcher = SparQLOffsetFetcher(
+            sparql,
+            9000,
+            where_body=f"?x a skos:Concept;\nskosxl:prefLabel ?l.\n ?l skosxl:literalForm ?lf.\nFILTER(lang(?lf)='{lang}')",
+            select_columns="?x ?lf",
+            prefixes="prefix skos: <http://www.w3.org/2004/02/skos/core#>\n"
+            "prefix skosxl: <http://www.w3.org/2008/05/skos-xl#>",
+            from_statement=from_statement,
+        )
     else:
-        fetcher = SparQLOffsetFetcher(sparql, 9000,
-                                    where_body=f"?x a skos:Concept;\nskos:prefLabel ?lf.\nFILTER(lang(?lf)='{lang}')",
-                                    select_columns="?x ?lf",
-                                    prefixes="prefix skos: <http://www.w3.org/2004/02/skos/core#>",
-                                    from_statement=from_statement)
+        fetcher = SparQLOffsetFetcher(
+            sparql,
+            9000,
+            where_body=f"?x a skos:Concept;\nskos:prefLabel ?lf.\nFILTER(lang(?lf)='{lang}')",
+            select_columns="?x ?lf",
+            prefixes="prefix skos: <http://www.w3.org/2004/02/skos/core#>",
+            from_statement=from_statement,
+        )
     results = fetcher.fetch_all()
     string_entries = [
         (result["x"]["value"], result["lf"]["value"]) for result in results
     ]
     if skos_xl_labels:
-        fetcher = SparQLOffsetFetcher(sparql, 9000,
-                                    where_body=f"?x a skos:Concept;\nskosxl:altLabel ?l.\n ?l skosxl:literalForm ?lf.\nFILTER(lang(?lf)='{lang}')",
-                                    select_columns="?x ?lf",
-                                    prefixes="prefix skos: <http://www.w3.org/2004/02/skos/core#>\n"
-                                            "prefix skosxl: <http://www.w3.org/2008/05/skos-xl#>",
-                                    from_statement=from_statement)
+        fetcher = SparQLOffsetFetcher(
+            sparql,
+            9000,
+            where_body=f"?x a skos:Concept;\nskosxl:altLabel ?l.\n ?l skosxl:literalForm ?lf.\nFILTER(lang(?lf)='{lang}')",
+            select_columns="?x ?lf",
+            prefixes="prefix skos: <http://www.w3.org/2004/02/skos/core#>\n"
+            "prefix skosxl: <http://www.w3.org/2008/05/skos-xl#>",
+            from_statement=from_statement,
+        )
     else:
-        fetcher = SparQLOffsetFetcher(sparql, 9000,
-                                    where_body=f"?x a skos:Concept;\nskos:altLabel ?lf.\nFILTER(lang(?lf)='{lang}')",
-                                    select_columns="?x ?lf",
-                                    prefixes="prefix skos: <http://www.w3.org/2004/02/skos/core#>",
-                                    from_statement=from_statement)
+        fetcher = SparQLOffsetFetcher(
+            sparql,
+            9000,
+            where_body=f"?x a skos:Concept;\nskos:altLabel ?lf.\nFILTER(lang(?lf)='{lang}')",
+            select_columns="?x ?lf",
+            prefixes="prefix skos: <http://www.w3.org/2004/02/skos/core#>",
+            from_statement=from_statement,
+        )
     results = fetcher.fetch_all()
 
     string_entries.extend(

@@ -47,7 +47,7 @@ class TrieApproxRecognizer(ConceptRecognizer):
         else:
             raise ValueError(f"Unsupported language: {language}")
 
-    def _embed_batch_concept_labels(self, concept_id, labels):
+    def _index_concept_labels(self, concept_id, labels):
         for label_index, label in enumerate(labels):
             normalized = (
                 self.punctuation_remove.sub(" ", label).replace("-", " ").lower()

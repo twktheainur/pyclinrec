@@ -6,8 +6,13 @@ from tqdm import tqdm
 
 
 class Concept:
-    def __init__(self, uri, labels: Set[str] = None, label_embeddings: Dict[str, torch.tensor] = None,
-                 definition: str = ""):
+    def __init__(
+        self,
+        uri,
+        labels: Set[str] = None,
+        label_embeddings: Dict[str, torch.tensor] = None,
+        definition: str = "",
+    ):
         self.label_embeddings = label_embeddings
         if label_embeddings is None:
             self.label_embeddings = {}
@@ -28,11 +33,22 @@ class Concept:
 
 
 class Annotation:
-    def __init__(self, concept_id, start, end, matched_text, matched_length, label_key: str = None, concept: Concept = None):
+    def __init__(
+        self,
+        concept_id,
+        start,
+        end,
+        matched_text,
+        matched_length,
+        label_key: str = None,
+        concept: Concept = None,
+        confidence_score: float = 1,
+        match_embedding=None,
+    ):
         """
-        An annotation is a mention of a concept in a text. It is defined by a concept id, a start and end position in the text, 
+        An annotation is a mention of a concept in a text. It is defined by a concept id, a start and end position in the text,
         the matched text and its length.
-        
+
         Parameters
         ==========
             concept_id: str
@@ -57,7 +73,8 @@ class Annotation:
         self.matched_text = matched_text
         self.matched_length = matched_length
         self.loaded_concept = None
-        self.confidence_score = 1
+        self.confidence_score = confidence_score
+        self.match_embedding = match_embedding
         self.concept = concept
 
     def __str__(self) -> str:
@@ -65,7 +82,12 @@ class Annotation:
 
     def __eq__(self, o) -> bool:
         if isinstance(o, Annotation):
-            return 'concept_id' in o.__dict__ and self.concept_id == o.concept_id and self.start == o.start and self.end == o.end
+            return (
+                "concept_id" in o.__dict__
+                and self.concept_id == o.concept_id
+                and self.start == o.start
+                and self.end == o.end
+            )
         else:
             return False
 
@@ -83,8 +105,13 @@ class AnnotationFilter(ABC):
         super().__init__()
 
     @abstractmethod
-    def apply_filter(self, annotations: Set[Annotation], text, tokens_spans: List[Tuple[int, int]], tokens) -> Set[
-        Annotation]:
+    def apply_filter(
+        self,
+        annotations: Set[Annotation],
+        text,
+        tokens_spans: List[Tuple[int, int]],
+        tokens,
+    ) -> Set[Annotation]:
         """
         Filter the annotations provided and return a list of filtered annotations of length lesser or equal to the
         annotations provided.
@@ -108,10 +135,12 @@ class AnnotationFilter(ABC):
 
 
 class ConceptRecognizer(ABC):
-    def __init__(self, dictionary_loader, language="en",filters: List[AnnotationFilter] = None):
+    def __init__(
+        self, dictionary_loader, language="en", filters: List[AnnotationFilter] = None
+    ):
         """
         This is the constructor of an Abstract class and should never be called directly, see subclasses.
-        
+
         Parameters
         ----------
             dictionary_loader: DictionaryLoader
@@ -135,7 +164,7 @@ class ConceptRecognizer(ABC):
         return words
 
     @abstractmethod
-    def _embed_batch_concept_labels(self, concept_id, labels):
+    def _index_concept_labels(self, concept_id, labels):
         pass
 
     def initialize(self):
@@ -154,10 +183,12 @@ class ConceptRecognizer(ABC):
                 labels.extend(entry.synonyms)
             concept = Concept(concept_id, set(labels))
             self.concept_index[concept_id] = concept
-            self._embed_batch_concept_labels(concept_id, labels)
+            self._index_concept_labels(concept_id, labels)
 
     @abstractmethod
-    def _match_mentions(self, input_text) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
+    def _match_mentions(
+        self, input_text
+    ) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
         """Match candidate mentions of entities from the dictionary in the text
         Parameters
         ----------
@@ -175,7 +206,9 @@ class ConceptRecognizer(ABC):
 
         raise NotImplementedError("This abstract method must be overridden")
 
-    def __call__(self, input_text) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
+    def __call__(
+        self, input_text
+    ) -> Tuple[List[Tuple[int, int]], List[str], Set[Annotation]]:
         """Matches candidate mentions of entities from the dictionary in the text and
         applies pre and post-processing filters
         Parameters
@@ -193,5 +226,7 @@ class ConceptRecognizer(ABC):
         """
         token_spans, tokens, annotations = self._match_mentions(input_text)
         for annotation_filter in self.filters:
-            annotations = annotation_filter.apply_filter(annotations, input_text, token_spans, tokens)
+            annotations = annotation_filter.apply_filter(
+                annotations, input_text, token_spans, tokens
+            )
         return token_spans, tokens, annotations

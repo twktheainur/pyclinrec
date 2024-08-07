@@ -40,7 +40,7 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
             filters: List[AnnotationFilter]
                 A list of filters to apply post recognition
         """
-        
+
         super().__init__(dictionary_loader, language=language, filters=filters)
         self.stop_words = self._load_word_list(stop_words_file)
         self.termination_terms = self._load_word_list(termination_terms_file)
@@ -69,7 +69,7 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
         else:
             return self.unigram_root_index[root]
 
-    def _embed_batch_concept_labels(self, concept_id, labels):
+    def _index_concept_labels(self, concept_id, labels):
         for label_index, label in enumerate(labels):
             normalized = PUNCTUATION_REGEX.sub(" ", label).lower()
             # We tokenize the label
@@ -111,9 +111,10 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
         concept_end = current_span[1]
         match_cursor = 1
         stop_count = 0
-        while (
-            current_token_span_index + match_cursor < len(token_spans)
-            and not self._is_span_termination_token(token_spans[current_token_span_index + match_cursor], input_text)
+        while current_token_span_index + match_cursor < len(
+            token_spans
+        ) and not self._is_span_termination_token(
+            token_spans[current_token_span_index + match_cursor], input_text
         ):
             # We get the next token and position span
             next_span = token_spans[current_token_span_index + match_cursor]
@@ -224,16 +225,16 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
     ):
         annotations = []
         for concept in concepts:
-            matched_length =  match_cursor - stop_count
+            matched_length = match_cursor - stop_count
             # We check that the matched length is equal to the number of tokens in the concept
             if matched_length == self.concept_length_index[concept]:
                 key_parts = concept.split(":::")
                 concept_id = str(key_parts[0])
                 annotation = Annotation(
-                    concept_id = concept_id,
+                    concept_id=concept_id,
                     start=concept_start,
                     end=concept_end,
-                    matched_text = input_text[concept_start:concept_end],
+                    matched_text=input_text[concept_start:concept_end],
                     matched_length=matched_length,
                     label_key=concept,
                     concept=self.concept_index[concept_id],
@@ -246,7 +247,8 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
         return token in self.stop_words or token in self.termination_terms
 
     def _is_span_termination_token(self, token_span, text):
-        return text[token_span[0]:token_span[1]].strip() in self.termination_terms
+        return text[token_span[0] : token_span[1]].strip() in self.termination_terms
+
 
 class LevenshteinAnnotationFilter(AnnotationFilter):
     def __init__(self, theta=0.85):

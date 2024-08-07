@@ -1,5 +1,3 @@
-
-
 import pickle
 
 from pathlib import Path
@@ -17,11 +15,13 @@ from pyclinrec.dictionary import generate_dictionary_from_skos_sparql
 
 
 class AgrovocDictionaryGenerator:
-    def __init__(self,
-                endpoint="https://data-issa.cirad.fr/sparql",
-                graph="http://agrovoc.fao.org/graph",
-                language="en",
-                output_dir='.'):
+    def __init__(
+        self,
+        endpoint="https://data-issa.cirad.fr/sparql",
+        graph="http://agrovoc.fao.org/graph",
+        language="en",
+        output_dir=".",
+    ):
         self.endpoint = endpoint
         self.graph = graph
         self.language = language
@@ -31,15 +31,18 @@ class AgrovocDictionaryGenerator:
         if not os.path.exists(self.output):
             Path(output_dir).mkdir(exist_ok=True)
             # generate dict tsv file
-            print('generating dictionary..')
-            generate_dictionary_from_skos_sparql(endpoint, self.output,
-                                                skos_xl_labels=True,
-                                                lang=language,
-                                                from_statement=graph)
+            print("generating dictionary..")
+            generate_dictionary_from_skos_sparql(
+                endpoint,
+                self.output,
+                skos_xl_labels=True,
+                lang=language,
+                from_statement=graph,
+            )
 
 
-dict_gen_en = AgrovocDictionaryGenerator(output_dir='./vocab', language="en")
-dict_gen_fr = AgrovocDictionaryGenerator(output_dir='./vocab', language="fr")
+dict_gen_en = AgrovocDictionaryGenerator(output_dir="./vocab", language="en")
+dict_gen_fr = AgrovocDictionaryGenerator(output_dir="./vocab", language="fr")
 
 from pyclinrec.dictionary import MgrepDictionaryLoader
 from pyclinrec.recognizer import IntersStemConceptRecognizer
@@ -50,11 +53,18 @@ from pyclinrec import __path__ as pyclinrec_path
 class AgrovocAnnotator:
     def __init__(self, dictionary_file, language="en"):
         dictionary_loader = MgrepDictionaryLoader(dictionary_file)
-        
+
         from transformers import AutoTokenizer, AutoModel
-        model_name = "emilyalsentzer/Bio_ClinicalBERT"
-        self.concept_recognizer = IntersEmbeddingConceptRecognizer(dictionary_loader, os.path.join(pyclinrec_path[0], f"stopwords{language}.txt"),
-                                                            os.path.join(pyclinrec_path[0],f"termination_terms{language}.txt"),language, model_name, batch_size=200)
+
+        model_name = "recobo/agriculture-bert-uncased"
+        self.concept_recognizer = IntersEmbeddingConceptRecognizer(
+            dictionary_loader,
+            os.path.join(pyclinrec_path[0], f"stopwords{language}.txt"),
+            os.path.join(pyclinrec_path[0], f"termination_terms{language}.txt"),
+            language,
+            model_name,
+            batch_size=100,
+        )
 
         self.concept_recognizer.initialize()
 
@@ -63,36 +73,36 @@ class AgrovocAnnotator:
 
 
 if __name__ == "__main__":
-    pkl_file = 'AgrovocAnnotator_deep_en.pkl'
+    pkl_file = "AgrovocAnnotator_deep_en.pkl"
 
     if not os.path.exists(pkl_file):
-        annotator_en = AgrovocAnnotator("./vocab/agrovoc-en.tsv", language="en")
+        annotator_en = AgrovocAnnotator("./vocab/agrovoc-en-small.tsv", language="en")
 
         # serialise to save time on initialization
-        with open(pkl_file, 'wb') as f:
+        with open(pkl_file, "wb") as f:
             pickle.dump(annotator_en, f)
     else:
         # deserialize
-        with open(pkl_file, 'rb') as f:
+        with open(pkl_file, "rb") as f:
             annotator_en = pickle.load(f)
 
     len(annotator_en.concept_recognizer.concept_index)
 
-    pkl_file = 'AgrovocAnnotator_deep_fr.pkl'
+    # pkl_file = 'AgrovocAnnotator_deep_fr.pkl'
 
-    if not os.path.exists(pkl_file):
-        annotator_fr = AgrovocAnnotator("./vocab/agrovoc-fr.tsv", language="fr")
+    # if not os.path.exists(pkl_file):
+    #     annotator_fr = AgrovocAnnotator("./vocab/agrovoc-fr.tsv", language="fr")
 
-        # serialise to save time on initialization
-        with open(pkl_file, 'wb') as f:
-            pickle.dump(annotator_fr, f)
-    else:
-        # deserialize
-        with open(pkl_file, 'rb') as f:
-            annotator_fr = pickle.load(f)
-    len(annotator_fr.concept_recognizer.concept_index)
+    #     # serialise to save time on initialization
+    #     with open(pkl_file, 'wb') as f:
+    #         pickle.dump(annotator_fr, f)
+    # else:
+    #     # deserialize
+    #     with open(pkl_file, 'rb') as f:
+    #         annotator_fr = pickle.load(f)
+    # len(annotator_fr.concept_recognizer.concept_index)
 
-    text = "Agwergsd. Plant-plant polination is possible"
+    text = "Phyllactinia enkianthi are truly thriving, along with Allium siculum in their dioscoridis subspecies."
 
     annotations = annotator_en.annotate(text)
 

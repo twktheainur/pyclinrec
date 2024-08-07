@@ -6,7 +6,7 @@ from nltk.corpus import stopwords
 
 tokenizer = TreebankWordTokenizer()
 
-_stop_words = stopwords.words('english')
+_stop_words = stopwords.words("english")
 
 
 def compute_hard_overlap(collection_a: List[str], collection_b: List[str]):
@@ -20,14 +20,28 @@ def compute_hard_overlap(collection_a: List[str], collection_b: List[str]):
     return overlap_count
 
 
-def tverski_ratio(alpha: float, beta: float, gamma: float, overlap_count: float, difference_a: float,
-                  difference_b: float):
-    contrast = tverski_contrast(alpha, beta, gamma, overlap_count, difference_a, difference_b)
+def tverski_ratio(
+    alpha: float,
+    beta: float,
+    gamma: float,
+    overlap_count: float,
+    difference_a: float,
+    difference_b: float,
+):
+    contrast = tverski_contrast(
+        alpha, beta, gamma, overlap_count, difference_a, difference_b
+    )
     return 0 if contrast == 0 else alpha * overlap_count / contrast
 
 
-def tverski_contrast(alpha: float, beta: float, gamma: float, overlap_count: float, difference_a: float,
-                     difference_b: float):
+def tverski_contrast(
+    alpha: float,
+    beta: float,
+    gamma: float,
+    overlap_count: float,
+    difference_a: float,
+    difference_b: float,
+):
     return alpha * overlap_count - beta * difference_a - gamma * difference_b
 
 
@@ -43,7 +57,7 @@ def jaccard(collection_a, collection_b):
 def geometric_mean_aggregation(weighted_values: List[Tuple[float, float]]):
     length = len(weighted_values)
     overall_product = 1
-    for (v, w) in weighted_values:
+    for v, w in weighted_values:
         if v is not None:
             v = max(v, 0.00001)
             overall_product *= math.pow(v, w)
@@ -53,7 +67,7 @@ def geometric_mean_aggregation(weighted_values: List[Tuple[float, float]]):
 def arithmetic_mean_aggregation(weighted_values: List[Tuple[float, float]]):
     length = len(weighted_values)
     overall_sum = 0.0
-    for (v, w) in weighted_values:
+    for v, w in weighted_values:
         overall_sum += v * w
 
     return overall_sum / float(length)
