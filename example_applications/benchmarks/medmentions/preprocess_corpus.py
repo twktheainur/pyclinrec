@@ -1,7 +1,13 @@
 import hashlib
 import json
+import pickle
 import redis
 import requests
+
+from data_model.medmentions import (
+    Document,
+    Mention,
+)
 
 
 redis_client = redis.StrictRedis(host="localhost", port=6379, db=0)
@@ -11,44 +17,15 @@ def get_with_cache(url, headers=None):
     # Create a unique key for the URL
     url_hash = hashlib.md5(url.encode()).hexdigest()
     if cached_response := redis_client.get(url_hash):
-        print("Cache hit")
         return json.loads(cached_response.decode("utf-8"))
-    else:
-        print("Cache miss")
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            redis_client.set(url_hash, response.text)
-        return json.loads(response.text)
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        redis_client.set(url_hash, response.text)
+    return json.loads(response.text)
 
 
-class Mention:
-    def __init__(self, doc_id, sem_type, linked_class, start, end, text):
-        self.doc_id = doc_id
-        self.sem_type = sem_type
-        self.linked_class = linked_class
-        self.start = start
-        self.end = end
-        self.text = text
-
-    def __str__(self):
-        return f"DOC: {self.doc_id} T: {self.sem_type} C: {self.linked_class} S: {self.start} E: {self.end} TXT: {self.text}"
-
-
-class Document:
-    def __init__(self, id, title, abstract, mentions: list[Mention]):
-        self.id = id
-        self.abstract = abstract
-        self.title = title
-        self.mentions = mentions
-
-    def __str__(self):
-        start_str = f"ID: {self.id}\nTitle: {self.title}\nAbstract: {self.abstract}"
-        mentions_str = "\n".join([str(mention) for mention in self.mentions])
-        return start_str + "\n" + mentions_str
-
-
-def parse_pubtator(path):
-    from tqdm.notebook import tqdm
+def parse_pubtator(path, limit=None):
+    from tqdm import tqdm
 
     with open(path) as f:
         lines = f.readlines()
@@ -60,13 +37,16 @@ def parse_pubtator(path):
     current_title = None
     current_abstract = None
     abstract_passed = False
+    document_count = 0
     for line in tqdm(lines):
         if "|t|" in line:
             title_data = line.split("|t|")
             if current_id is None or current_id != title_data[0]:
                 current_id = title_data[0]
                 current_title = title_data[1]
-
+                document_count += 1
+                if limit is not None and document_count > limit:
+                    break
                 if len(doc_mentions) > 0:
                     docs.append(
                         Document(
@@ -101,7 +81,6 @@ def parse_pubtator(path):
 
 
 def get_all_pages(uri):
-    from tqdm.notebook import trange
 
     response = get_with_cache(uri)
 
@@ -109,7 +88,7 @@ def get_all_pages(uri):
     if response["pageCount"] > 1:
         if not isinstance(response["result"], list):
             response["result"] = [response["result"]]
-        for page_number in trange(2, int(response["pageCount"])):
+        for page_number in range(2, int(response["pageCount"])):
             page_response = get_with_cache(f"{uri}&pageNumber={page_number}")
             if not isinstance(page_response["result"], list):
                 response["result"].extend([page_response["result"]])
@@ -181,9 +160,11 @@ def fetch_CUI_data_from_UMLS(
     return final_dict
 
 
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 
-medmentions, concepts = parse_pubtator("data/medmentions_st21pv/corpus_pubtator.txt")
+medmentions, concepts = parse_pubtator(
+    "data/medmentions_st21pv/corpus_pubtator.txt", limit=10
+)
 
 concepts = {
     concept.split(":")[1]: fetch_CUI_data_from_UMLS(
@@ -193,3 +174,7 @@ concepts = {
     )
     for concept in tqdm(concepts)
 }
+
+
+pickle.dump(medmentions, open("data/medmentions.pkl", "wb"))
+pickle.dump(concepts, open("data/concepts.pkl", "wb"))
