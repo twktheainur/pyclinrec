@@ -1,3 +1,6 @@
+import json
+
+
 class Mention:
     def __init__(self, doc_id, sem_type, linked_class, start, end, text):
         self.doc_id = doc_id
@@ -22,3 +25,6 @@ class Document:
         start_str = f"ID: {self.id}\nTitle: {self.title}\nAbstract: {self.abstract}"
         mentions_str = "\n".join([str(mention) for mention in self.mentions])
         return start_str + "\n" + mentions_str
+
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)

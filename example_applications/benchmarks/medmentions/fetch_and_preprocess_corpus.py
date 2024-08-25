@@ -4,7 +4,9 @@ import pickle
 import redis
 import requests
 
-from data_model.medmentions import (
+from tqdm import tqdm
+
+from medmentions.medmentions import (
     Document,
     Mention,
 )
@@ -24,12 +26,15 @@ def get_with_cache(url, headers=None):
     return json.loads(response.text)
 
 
-def parse_pubtator(path, limit=None):
+class InvalidPubtatorFormatError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
+def parse_pubtator(corpus_file_descriptor, limit=None):
     from tqdm import tqdm
 
-    with open(path) as f:
-        lines = f.readlines()
-
+    lines = corpus_file_descriptor.readlines()
     docs = []
     concept_set = set()
     doc_mentions = []
@@ -39,6 +44,8 @@ def parse_pubtator(path, limit=None):
     abstract_passed = False
     document_count = 0
     for line in tqdm(lines):
+        # Transform b string to string
+        line = line.decode("utf-8")
         if "|t|" in line:
             title_data = line.split("|t|")
             if current_id is None or current_id != title_data[0]:
@@ -57,7 +64,7 @@ def parse_pubtator(path, limit=None):
                     abstract_passed = False
         elif not abstract_passed:
             if "|a|" not in line:
-                raise Exception("Invalid syntax, expected abstract")
+                raise InvalidPubtatorFormatError("Invalid syntax, expected abstract")
             abstract_data = line.split("|a|")
             current_abstract = abstract_data[1]
             abstract_passed = True
@@ -160,21 +167,55 @@ def fetch_CUI_data_from_UMLS(
     return final_dict
 
 
-from tqdm import tqdm
+#
 
-medmentions, concepts = parse_pubtator(
-    "data/medmentions_st21pv/corpus_pubtator.txt", limit=10
-)
+# Step 1: Download the zip file
+url = "https://github.com/chanzuckerberg/MedMentions/raw/master/st21pv/data/corpus_pubtator.txt.gz"
+response = requests.get(url, stream=True)
 
-concepts = {
-    concept.split(":")[1]: fetch_CUI_data_from_UMLS(
-        concept.split(":")[1],
-        umls_version="2017AA",
-        api_key="603302b8-6645-40a6-a944-39319c399451",
-    )
-    for concept in tqdm(concepts)
-}
+# Sizes in bytes.
+total_size = int(response.headers.get("content-length", 0))
+block_size = 1024
 
+with tqdm(
+    total=total_size,
+    unit="B",
+    unit_scale=True,
+    desc="Downloading corpus corpus_pubtator.txt.gz",
+) as progress_bar:
+    with open("data/corpus_pubtator.txt.gz", "wb") as file:
+        for data in response.iter_content(block_size):
+            progress_bar.update(len(data))
+            file.write(data)
 
-pickle.dump(medmentions, open("data/medmentions.pkl", "wb"))
-pickle.dump(concepts, open("data/concepts.pkl", "wb"))
+if total_size != 0 and progress_bar.n != total_size:
+    raise RuntimeError("Could not download file")
+
+# Step 2: Extract the file from the gz archive and parse its contents
+
+import gzip
+
+with gzip.open("data/corpus_pubtator.txt.gz", "r") as f:
+    from tqdm import tqdm
+
+    medmentions, concepts = parse_pubtator(f)  # , limit=10
+
+    concepts = {
+        concept.split(":")[1]: fetch_CUI_data_from_UMLS(
+            concept.split(":")[1],
+            umls_version="2017AA",
+            api_key="603302b8-6645-40a6-a944-39319c399451",
+        )
+        for concept in tqdm(concepts)
+    }
+
+    pickle.dump(medmentions, open("data/medmentions.pkl", "wb"))
+    pickle.dump(concepts, open("data/concepts.pkl", "wb"))
+
+    with open("data/medmentions.json", "w") as mmf:
+        mmf.write("[\n")
+        for doc in medmentions:
+            mmf.write(doc.toJSON() + ",\n")
+        mmf.write("]\n")
+
+    json.dump(concepts, open("data/concepts.json", "w"))
