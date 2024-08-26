@@ -49,8 +49,6 @@ def parse_pubtator(corpus_file_descriptor, limit=None):
         if "|t|" in line:
             title_data = line.split("|t|")
             if current_id is None or current_id != title_data[0]:
-                current_id = title_data[0]
-                current_title = title_data[1]
                 document_count += 1
                 if limit is not None and document_count > limit:
                     break
@@ -62,6 +60,8 @@ def parse_pubtator(corpus_file_descriptor, limit=None):
                     )
                     doc_mentions = []
                     abstract_passed = False
+                current_id = title_data[0]
+                current_title = title_data[1]
         elif not abstract_passed:
             if "|a|" not in line:
                 raise InvalidPubtatorFormatError("Invalid syntax, expected abstract")
@@ -198,7 +198,7 @@ import gzip
 with gzip.open("data/corpus_pubtator.txt.gz", "r") as f:
     from tqdm import tqdm
 
-    medmentions, concepts = parse_pubtator(f)  # , limit=10
+    medmentions, concepts = parse_pubtator(f, limit=20)
 
     concepts = {
         concept.split(":")[1]: fetch_CUI_data_from_UMLS(
