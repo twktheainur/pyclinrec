@@ -55,7 +55,7 @@ def parse_pubtator(corpus_file_descriptor, limit=None):
                 if len(doc_mentions) > 0:
                     docs.append(
                         Document(
-                            current_id, current_title, current_abstract, doc_mentions
+                            current_id, current_title + current_abstract, doc_mentions
                         )
                     )
                     doc_mentions = []
@@ -115,31 +115,26 @@ def fetch_CUI_data_from_UMLS(
     response = get_with_cache(query)
 
     definitions_uri = response["result"]["definitions"]
-    response["result"]["definitions"] = []
+    final_dict = {"definitions": []}
     if definitions_uri != "NONE":
         definitions = get_all_pages(definitions_uri + param_string)
         for definition in definitions["result"]:
             source = definition["rootSource"]
             text = definition["value"]
-            response["result"]["definitions"].append({"source": source, "text": text})
+            final_dict["definitions"].append({"source": source, "text": text})
 
     atoms_uri = response["result"]["atoms"]
     atoms = get_all_pages(atoms_uri + param_string)
-    response["result"]["atoms"] = []
+    final_dict["labels"] = []
     if atoms_uri != "NONE":
         for atom in atoms["result"]:
             code = atom["code"]
             concept = atom["concept"]
             name = atom["name"]
             term_type = atom["termType"]
-            response["result"]["atoms"].append(
+            final_dict["labels"].append(
                 {"code": code, "concept": concept, "name": name, "termType": term_type}
             )
-
-    final_dict = {
-        "atoms": response["result"]["atoms"],
-        "definitions": response["result"]["definitions"],
-    }
 
     if include_relations:
         relations_uri = response["result"]["relations"]
@@ -198,7 +193,7 @@ import gzip
 with gzip.open("data/corpus_pubtator.txt.gz", "r") as f:
     from tqdm import tqdm
 
-    medmentions, concepts = parse_pubtator(f, limit=20)
+    medmentions, concepts = parse_pubtator(f, limit=40)
 
     concepts = {
         concept.split(":")[1]: fetch_CUI_data_from_UMLS(

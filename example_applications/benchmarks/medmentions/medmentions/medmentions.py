@@ -15,10 +15,9 @@ class Mention:
 
 
 class Document:
-    def __init__(self, id, title, abstract, mentions: list[Mention]):
+    def __init__(self, id, text, mentions: list[Mention]):
         self.id = id
-        self.abstract = abstract
-        self.title = title
+        self.text = text
         self.mentions = mentions
 
     def __str__(self):
