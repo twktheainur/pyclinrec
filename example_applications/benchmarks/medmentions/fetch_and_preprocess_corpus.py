@@ -193,7 +193,7 @@ import gzip
 with gzip.open("data/corpus_pubtator.txt.gz", "r") as f:
     from tqdm import tqdm
 
-    medmentions, concepts = parse_pubtator(f, limit=40)
+    medmentions, concepts = parse_pubtator(f, limit=400)
 
     concepts = {
         concept.split(":")[1]: fetch_CUI_data_from_UMLS(

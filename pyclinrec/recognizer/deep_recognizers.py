@@ -16,7 +16,6 @@ from pyclinrec.utils.spacy_utils import span_tokenize
 
 import scipy
 
-from deeplake.core.vectorstore import VectorStore
 
 import numpy as np
 
@@ -399,7 +398,7 @@ class IntersEmbeddingConceptRecognizer(ConceptRecognizer):
                     np.hstack(list(concept_scores.values()))
                 )
 
-                is_outlier_ecod(np.hstack(list(concept_scores.values())), embeddings)
+                # is_outlier_ecod(np.hstack(list(concept_scores.values())), embeddings)
                 next_concepts = {
                     next_concepts[i]: {"z_score": z_score, "embedding": embeddings[i]}
                     for i, (z_score) in zip(outlying_concept_indexes, outlying_z_scores)
@@ -466,9 +465,7 @@ class IntersEmbeddingConceptRecognizer(ConceptRecognizer):
                 annotations.extend(
                     self._create_annotations(input_text, final_candidate_concepts)
                 )
-                current_token_span_index += 1
-            else:
-                current_token_span_index += 1
+            current_token_span_index += 1
         return (
             token_spans,
             [input_text[span[0] : span[1]] for span in token_spans],

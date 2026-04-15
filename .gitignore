@@ -122,3 +122,15 @@ resources/*.svg
 
 # HTML documentation output
 html/
+
+
+*.pkl
+*:Zone.Identifier
+*.pt
+
+.vscode/*
+*.zip
+
+*lightning_logs/*
+
+umls_embedding_vector_store/*

@@ -53,30 +53,40 @@ def load_umls_embeddings_to_redis(embedding_file_descriptor, redis_client):
         embedding_tensors.append([float(x) for x in line[1:]])
 
     pipeline = redis_client.pipeline()
-    for cui, embedding in tqdm(
-        zip(cuis, embedding_tensors),
-        desc="Loading UMLS embeddings to Redis",
-        total=len(embedding_tensors),
+    for count_inserted, (cui, embedding) in enumerate(
+        tqdm(
+            zip(cuis, embedding_tensors),
+            desc="Loading UMLS embeddings to Redis",
+            total=len(embedding_tensors),
+        ),
+        start=1,
     ):
         global_key = f"umls:{cui}"
-        pipeline.json().set(global_key, "$", {"cui": cui, "embedding": embedding})
 
-    schema = (
-        TextField("$.cui", no_stem=True, as_name="cui"),
-        VectorField(
-            "$.embedding",
-            "FLAT",
-            {
-                "TYPE": "FLOAT32",
-                "DIM": len(embedding_tensors[0]),
-                "DISTANCE_METRIC": "COSINE",
-            },
-            as_name="vector",
-        ),
-    )
-    print("Creating index...")
-    definition = IndexDefinition(prefix=["umls:"], index_type=IndexType.JSON)
-    redis_client.ft("idx:umls").create_index(fields=schema, definition=definition)
+        pipeline.json().set(global_key, "$", {"cui": cui, "embedding": embedding})
+        if count_inserted % 1000 == 0:
+            pipeline.execute()
+            pipeline = redis_client.pipeline()
+    try:
+        schema = (
+            TextField("$.cui", no_stem=True, as_name="cui"),
+            VectorField(
+                "$.embedding",
+                "FLAT",
+                {
+                    "TYPE": "FLOAT32",
+                    "DIM": len(embedding_tensors[0]),
+                    "DISTANCE_METRIC": "COSINE",
+                },
+                as_name="vector",
+            ),
+        )
+        print("Creating index...")
+        definition = IndexDefinition(prefix=["umls:"], index_type=IndexType.JSON)
+        redis_client.ft("idx:umls").create_index(fields=schema, definition=definition)
+    except redis.exceptions.ResponseError as e:
+        if e.args[0] == "Index already exists":
+            print("Index already exists, skipping creation.")
 
 
 # class UMLSEmbeddingsVectorStore(Dataset):
