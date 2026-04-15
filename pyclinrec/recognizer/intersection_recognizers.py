@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from typing import Set, Tuple, List
 
 import jellyfish
@@ -13,7 +14,7 @@ from pyclinrec.recognizer import (
     AnnotationFilter,
 )
 from pyclinrec.utils.re import PUNCTUATION_REGEX
-from pyclinrec.utils.spacy_utils import span_tokenize
+from pyclinrec.utils.spacy_utils import span_tokenize, batch_span_tokenize_fast
 
 
 class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
@@ -44,9 +45,10 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
         super().__init__(dictionary_loader, language=language, filters=filters)
         self.stop_words = self._load_word_list(stop_words_file)
         self.termination_terms = self._load_word_list(termination_terms_file)
-        self.unigram_root_index = {}
+        self.unigram_root_index = defaultdict(set)
         self.concept_length_index = {}
-        self.unigram_concept_count_histogram = {}
+        self.unigram_concept_count_histogram = defaultdict(int)
+        self._stem_cache = {}
 
         if language == "en":
             import en_core_web_md
@@ -63,6 +65,13 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
     def _root_function(self, token) -> str:
         pass
 
+    def _cached_root(self, token) -> str:
+        root = self._stem_cache.get(token)
+        if root is None:
+            root = self._root_function(token)
+            self._stem_cache[token] = root
+        return root
+
     def _concept_from_root(self, root) -> Set[Concept]:
         if root not in self.unigram_root_index:
             return set()
@@ -72,30 +81,57 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
     def _index_concept_labels(self, concept_id, labels):
         for label_index, label in enumerate(labels):
             normalized = PUNCTUATION_REGEX.sub(" ", label).lower()
-            # We tokenize the label
+            # We tokenize the label using the fast tokenizer-only path
             tokens, _ = span_tokenize(self.spacy, normalized)
 
             concept_token_count = 0
-            # For each token
             key = f"{str(concept_id)}:::{str(label_index)}"
             for token in tokens:
-                # We skip words that belong to the stop list and words that contain non alphanumerical characters
                 if token not in self.stop_words:
-                    token_phone = self._root_function(token)
-
-                    # we create the dictionary entry if it did not exist before
-                    if token_phone not in self.unigram_root_index:
-                        self.unigram_root_index[token_phone] = set()
-                    # if it already existed we add the concept id to the corresponding set
+                    token_phone = self._cached_root(token)
                     self.unigram_root_index[token_phone].add(key)
-                    count_key = (key, token_phone)
-                    self.unigram_concept_count_histogram[count_key] = (
-                        1
-                        if count_key not in self.unigram_concept_count_histogram
-                        else self.unigram_concept_count_histogram[count_key] + 1
-                    )
+                    self.unigram_concept_count_histogram[(key, token_phone)] += 1
                     concept_token_count += 1
             self.concept_length_index[key] = concept_token_count
+
+    def _batch_index_all_labels(self, entries):
+        """Batch-index all dictionary labels using tokenizer-only processing.
+
+        This is ~10-50x faster than the per-label _index_concept_labels path
+        because it uses spacy's tokenizer.pipe() for batch tokenization,
+        skipping the full NLP pipeline entirely.
+        """
+        # Collect all (concept_id, label_index, normalized_label) triples
+        label_tuples = []
+        normalized_texts = []
+        for concept_id, labels in entries:
+            for label_index, label in enumerate(labels):
+                normalized = PUNCTUATION_REGEX.sub(" ", label).lower()
+                label_tuples.append((concept_id, label_index))
+                normalized_texts.append(normalized)
+
+        # Batch tokenize all labels at once using tokenizer-only path
+        tokenized = batch_span_tokenize_fast(
+            self.spacy.tokenizer, normalized_texts, batch_size=2048
+        )
+
+        # Build indices from pre-tokenized results
+        stop_words = self.stop_words
+        root_index = self.unigram_root_index
+        length_index = self.concept_length_index
+        histogram = self.unigram_concept_count_histogram
+        cached_root = self._cached_root
+
+        for (concept_id, label_index), (tokens, _) in zip(label_tuples, tokenized):
+            key = f"{str(concept_id)}:::{str(label_index)}"
+            concept_token_count = 0
+            for token in tokens:
+                if token not in stop_words:
+                    token_phone = cached_root(token)
+                    root_index[token_phone].add(key)
+                    histogram[(key, token_phone)] += 1
+                    concept_token_count += 1
+            length_index[key] = concept_token_count
 
     def _match_subsequence(
         self,
@@ -123,7 +159,7 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
             #  if the token is in the termination list the matching process ends here
 
             if next_token not in self.stop_words:
-                next_token_root = self._root_function(next_token)
+                next_token_root = self._cached_root(next_token)
 
                 # We try to find matching concepts and compute the intersection with previously identified concepts
                 next_concepts = self._concept_from_root(next_token_root) & concepts
@@ -172,7 +208,7 @@ class IntersectionConceptRecognizer(ConceptRecognizer, ABC):
             # if the word is a stop list term or a termination term we skip it
             if not self._is_stop_or_termination_token(token_text):
                 # We get the concept ids matching the root of the current token
-                token_root = self._root_function(token_text)
+                token_root = self._cached_root(token_text)
                 concepts = self._concept_from_root(token_root)
 
                 (

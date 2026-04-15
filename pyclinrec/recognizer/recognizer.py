@@ -167,14 +167,23 @@ class ConceptRecognizer(ABC):
     def _index_concept_labels(self, concept_id, labels):
         pass
 
+    def _batch_index_all_labels(self, entries):
+        """Batch-index all dictionary labels. Default falls back to per-entry indexing.
+
+        Subclasses can override this to provide an optimized batch implementation.
+        """
+        for concept_id, labels in entries:
+            self._index_concept_labels(concept_id, labels)
+
     def initialize(self):
         print("Now loading the dictionary...")
         self.dictionary_loader.load()
         dictionary = self.dictionary_loader.dictionary  # type : List[DictionaryEntry]
         print("Now indexing the dictionary...")
+
+        # First pass: build concept index and collect labels for batch indexing
+        all_entries = []
         for entry in tqdm(dictionary):
-            # we split concept ids from labels
-            # fields = line.split("\t")
             label = entry.label
             concept_id = entry.id
 
@@ -183,7 +192,10 @@ class ConceptRecognizer(ABC):
                 labels.extend(entry.synonyms)
             concept = Concept(concept_id, set(labels))
             self.concept_index[concept_id] = concept
-            self._index_concept_labels(concept_id, labels)
+            all_entries.append((concept_id, labels))
+
+        # Second pass: batch-index all labels (subclasses may override for speed)
+        self._batch_index_all_labels(all_entries)
 
     @abstractmethod
     def _match_mentions(
@@ -230,3 +242,5 @@ class ConceptRecognizer(ABC):
                 annotations, input_text, token_spans, tokens
             )
         return token_spans, tokens, annotations
+
+    annotate = __call__
