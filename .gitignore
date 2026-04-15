@@ -104,3 +104,21 @@ venv.bak/
 .mypy_cache/
 
 .idea/
+
+# Vocabulary / resource data files
+vocab/
+*.tsv
+*.csv
+*.rdb
+dump.rdb
+
+# Large resource/asset files
+resources/*.png
+resources/*.ai
+resources/*.svg
+
+# Vector store artifacts
+*_vector_store_*/
+
+# HTML documentation output
+html/
