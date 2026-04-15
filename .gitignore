@@ -132,5 +132,10 @@ html/
 *.zip
 
 *lightning_logs/*
+lightning_logs/*
+*/lightning_logs/*
 
 umls_embedding_vector_store/*
+example_applications/benchmarks/medmentions/lightning_logs/*
+
+example_applications/benchmarks/medmentions/umls_embedding_vector_store/*
